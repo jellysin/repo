@@ -1,8 +1,8 @@
 # Contributing
 
 Create a feature branch from main and open a PR with a Conventional Commit title.
-Squash merges are used. Required checks use `strict: false`, so branches need not
-be rebased solely to satisfy a branch-up-to-date gate.
+Squash merges are used. The branch ruleset in `.github/rulesets/main.json` declares
+required checks with `strict: true`, so a branch must be up to date with main before it merges.
 
 CI uses SHA-pinned shared tooling to validate plugin repository structure, plugin identities,
 repository allowlisting, pinned Actions and policy documents. It also runs
