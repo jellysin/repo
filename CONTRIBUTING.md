@@ -72,8 +72,8 @@ names its merge commit, and release-please opens no further release PR while it 
 The shared workflow moves the label to `autorelease: tagged` once that tag exists;
 never move it by hand.
 
-`release-please-config.json` sets `last-release-sha` to the commit of release 1.0.1,
-because no tag exists for that withdrawn release and release-please would otherwise
-collect the whole history again. Release-please never ignores this key: after every
-merged release PR, move it to that release commit, or the next release PR repeats
-the same entries.
+`release-please-config.json` sets `last-release-sha` to the merge commit of the last
+release PR, now release 1.0.2 (tag `v1.0.2`). The key exists because release 1.0.1 was
+withdrawn without a tag and release-please would otherwise have collected the whole
+history again. Release-please never ignores this key: after every merged release PR,
+move it to that release commit, or the next release PR repeats the same entries.
