@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: jellysin/release-helper/actions/check@b08aab97ba0ffbe4d9808461677ccdcb588bd0ca # v1.1.0
+      - uses: jellysin/release-helper/actions/check@83bcc6a56c75b9da7a1d66a9755ec310a9d6a5a2 # v1.2.0
         with:
           catalog: 'true'
       - name: Validate workflows
@@ -29,6 +29,36 @@ jobs:
           echo "$ACTIONLINT_SHA256  $RUNNER_TEMP/actionlint.tar.gz" | sha256sum --check
           tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP" actionlint
           "$RUNNER_TEMP/actionlint" -color
+      - name: Test the pinned helper runner
+        run: python -B -m unittest discover -s tests
+  server-check:
+    name: server-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: A real Jellyfin server offers every entry of manifest.json
+        uses: jellysin/release-helper/actions/server-check@83bcc6a56c75b9da7a1d66a9755ec310a9d6a5a2 # v1.2.0
+        with:
+          manifest: manifest.json
+      - name: Write the server check fixtures
+        run: |
+          python -B scripts/release_helper.py server-check --emit-fixture floor "$RUNNER_TEMP/floor.json"
+          python -B scripts/release_helper.py server-check --emit-fixture wrong-abi "$RUNNER_TEMP/wrong-abi.json"
+      - name: The same server offers the floor fixture
+        uses: jellysin/release-helper/actions/server-check@83bcc6a56c75b9da7a1d66a9755ec310a9d6a5a2 # v1.2.0
+        with:
+          manifest: ${{ runner.temp }}/floor.json
+      # The step passes only on the refusal it expects; any other failure fails it.
+      - name: The same server refuses the wrong-abi fixture
+        run: |
+          status=0
+          output="$(python -B scripts/release_helper.py server-check --manifest "$RUNNER_TEMP/wrong-abi.json" 2>&1)" || status=$?
+          printf '%s\n' "$output"
+          [[ "$status" -eq 1 ]]
+          grep --fixed-strings --quiet 'does not offer d0973630-1561-4f3a-b26e-664229e6043e 1.0.0.0 (targetAbi 12.65534.0.0)' <<<"$output"
   governance:
     name: governance (praetor)
     runs-on: ubuntu-24.04

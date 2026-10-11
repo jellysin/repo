@@ -77,8 +77,7 @@ Register follows the audience, then the task label of your brief (`register:` in
 
 ```bash
 # Fast local test suite
-# Project verification unavailable: No supported build-system marker or explicit test runner was found; define and exercise a project verify-all target. A required build or test command is absent; define and exercise the project's verify-all contract.
-exit 1
+python3 -B -m unittest discover -s tests
 
 # Recompile and verify cross-agent context outputs
 praetorctl compile-context --verify
@@ -108,3 +107,5 @@ Read CONTRIBUTING.md before changing plugin repository publication or branch beh
 - Default permissions are read-only; writes have explicit job scope and timeouts.
 - Conventional Commit PR titles, squash merges, required CI with strict: true.
 - Record failed or unavailable checks; never describe intended GitHub settings as verified.
+- All workflows pin one release-helper commit; `scripts/release_helper.py` runs that commit for verification gate, refuses any other.
+- CI job `server-check`: real Jellyfin server must offer every `manifest.json` entry; keep its wrong-ABI negative case.

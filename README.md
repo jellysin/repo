@@ -45,6 +45,10 @@ release artifacts against the repository, workflow, commit and tag. Releases mus
 be immutable. The ZIP's SHA-256, Jellyfin MD5, size, member paths, permissions,
 file allowlist and CRC are checked before any plugin repository file changes.
 
+CI also loads `manifest.json` into a real Jellyfin 12.2 server and fails when the
+server does not offer an entry. Validation of the file's form cannot show that: a
+server silently drops a version whose `targetAbi` is above its own version.
+
 The updater opens a PR using only this repository's GITHUB_TOKEN and explicitly
 dispatches CI on its branch. Required checks and normal PR review/merge behavior
 apply. Plugin source repositories have no write access here, and no release App
