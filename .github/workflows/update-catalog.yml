@@ -28,6 +28,8 @@ jobs:
         id: repository-pr
         with:
           token: ${{ github.token }}
+          # The main ruleset requires signed commits; an unsigned commit on this branch blocks the merge.
+          sign-commits: true
           branch: automation/repository
           base: main
           delete-branch: true
