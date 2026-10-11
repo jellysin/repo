@@ -71,3 +71,9 @@ A merged release PR keeps its `autorelease: pending` label until the tag `v<vers
 names its merge commit, and release-please opens no further release PR while it does.
 The shared workflow moves the label to `autorelease: tagged` once that tag exists;
 never move it by hand.
+
+`release-please-config.json` sets `last-release-sha` to the commit of release 1.0.1,
+because no tag exists for that withdrawn release and release-please would otherwise
+collect the whole history again. Release-please never ignores this key: after every
+merged release PR, move it to that release commit, or the next release PR repeats
+the same entries.

@@ -1,4 +1,5 @@
 {
+  "last-release-sha": "23609ee9572b8aab98bcbc5f4b589f97e3d45e68",
   "release-type": "simple",
   "include-component-in-tag": false,
   "packages": {
