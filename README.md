@@ -22,6 +22,8 @@ generated agent context against `AGENTS.md`.
 [praetor-hiss-agents]: https://github.com/jellysin/repo/blob/HEAD/AGENTS.md
 <!-- praetor:readme-governance:end -->
 
+JellySin: Jellyfin plus sin, a little temptation for your media server; said JELLY-sin.
+
 One plugin repository for JellySin's independent Jellyfin 12 plugins. Add this URL
 in Jellyfin's plugin repository settings:
 
