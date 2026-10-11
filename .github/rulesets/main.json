@@ -48,6 +48,9 @@
           },
           {
             "context": "governance (praetor)"
+          },
+          {
+            "context": "server-check"
           }
         ],
         "strict_required_status_checks_policy": true

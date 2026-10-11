@@ -5,16 +5,40 @@ Squash merges are used. The branch ruleset in `.github/rulesets/main.json` decla
 required checks with `strict: true`, so a branch must be up to date with main before it merges.
 
 CI uses SHA-pinned shared tooling to validate plugin repository structure, plugin identities,
-repository allowlisting, pinned Actions and policy documents. It also runs
-actionlint. Locally, use a checkout of the exact tooling commit pinned in CI:
+repository allowlisting, pinned Actions and policy documents. It also runs actionlint and
+the tests in `tests/`.
+
+The job `server-check` loads `manifest.json` into a real Jellyfin 12.2 server and fails
+when the server withholds an entry, for example a version whose `targetAbi` is above the
+server. The same job proves the check in both directions with two generated files: the
+server must offer the `floor` fixture and must refuse the `wrong-abi` fixture with its
+`does not offer` line. Keep that negative case when changing the job.
+
+## Local gate
 
 ```sh
-python ../release-helper/tools.py validate-catalog
-python ../release-helper/tools.py check-policy
-actionlint
+make verify-all
 ```
 
-Run these commands in `repo`. Local manifest updates also require GitHub CLI
+The target runs the governance checks, the policy and catalog validation of
+[release-helper](https://github.com/jellysin/release-helper), the tests and actionlint.
+`Makefile` lists the steps. It needs Python 3.14, git and actionlint.
+
+`scripts/release_helper.py` runs the helper at the one commit that all workflows pin, so
+that a local run and CI execute the same code. It fetches that commit once into
+`.workingdir/cache/` and prints the commit it runs. It refuses to run when the workflows
+name a tag, a branch or two different commits. `RELEASE_HELPER=<directory>` selects an
+existing checkout instead; the script accepts it only when it is an unmodified checkout of
+the pinned commit.
+
+```sh
+make server-check
+```
+
+This runs the server check on `manifest.json`. It needs Docker and pulls the Jellyfin
+image, so it is not part of `make verify-all`; CI runs it on every pull request.
+
+Local manifest updates also require GitHub CLI
 for signature verification and a GITHUB_TOKEN/GH_TOKEN for
 rate-limited API reads. It downloads data but never runs code from plugin archives.
 
