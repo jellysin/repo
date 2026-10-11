@@ -47,7 +47,7 @@ Adopted check = check adoption generated here (generated `make verify-all` + pra
 
 2. **Lead with output.** Direct answers, diffs, commands. No filler preamble, no "Based on", no restatement, no chatter.
 
-3. **Context transpiler first.** Never edit `CLAUDE.md`, `.cursor/rules/hiss-invariants.mdc`, `.github/copilot-instructions.md`, `.windsurfrules`, `.gemini/GEMINI.md`, `.codex/rules.md` manually. All agent instruction updates -> `AGENTS.md`, then:
+3. **Context transpiler first.** Never edit `CLAUDE.md`, `.gemini/GEMINI.md`, `.codex/rules.md` manually. All agent instruction updates -> `AGENTS.md`, then:
 
    ```bash
    praetorctl compile-context
@@ -57,7 +57,7 @@ Adopted check = check adoption generated here (generated `make verify-all` + pra
 
 4. **SARIF diagnostic distillation.** Compiler/linter errors -> distill to $\le 1,500$ tokens ($< 60$ lines): top 3 root-cause failures with file/line pointers; full SARIF logs -> ephemeral storage.
 
-5. **No evasion.** Never attempt `--no-verify`, `LEFTHOOK=0`, or modifying `.git/hooks`. Hooks = local gate adoption installs. Adoption adds no server-side `praetorctl` gate run. Scaffolded CI: `.github/workflows/praetor-docs.yml` runs step `Stop on a draft pull request`, `node tools/markdownlint/verify.mjs`, step `Verify figures`.
+5. **No evasion.** Never attempt `--no-verify`, `LEFTHOOK=0`, or modifying `.git/hooks`. Hooks = local gate adoption installs. Adoption scaffolds no CI workflow: `praetorctl` gates run local only.
 
 6. **Anti-loop interception.** Same AST diff + error category repeats $\ge 3$ times -> halt immediately. Re-evaluate design; no micro-textual retries.
 
@@ -113,5 +113,5 @@ Read CONTRIBUTING.md before changing plugin repository publication or branch beh
 - Use only this repository's GITHUB_TOKEN. No cross-repository write token or release App.
 - Plugin repository PRs change only `manifest.json`; bot CI is explicitly dispatched.
 - Default permissions are read-only; writes have explicit job scope and timeouts.
-- Conventional Commit PR titles, squash merges, required CI with strict: false.
+- Conventional Commit PR titles, squash merges, required CI with strict: true.
 - Record failed or unavailable checks; never describe intended GitHub settings as verified.

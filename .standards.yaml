@@ -3,16 +3,23 @@ version: 1
 repository:
   owner: jellysin
   name: repo
-  visibility: ""
-  description: ""
+  visibility: public
+  description: "JellySin Plugin Repository for Jellyfin 12"
   homepage: ""
   topics: []
+# Agent clients and editors in use. The engine generates and verifies the files of these only.
+agent_clients:
+  - claude
+  - codex
+  - gemini
+editors:
+  - universal
+  - vscode
+  - antigravity
 profiles:
   - template-seed
 facets:
   - security:high
-  - api:public-contract
-  - docs:seo-portal
   - agent:sandboxed
 register:
   sources:
@@ -30,6 +37,8 @@ register:
         kind: message
         format: json
         selector: invariants.*
+# One maintainer: no approving review is required and the admin role may bypass on pull
+# requests only. The required count stays, so that restoring independent review keeps it.
 overrides:
   branch_protection:
     required_approving_reviewers: 1

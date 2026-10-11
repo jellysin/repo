@@ -27,11 +27,8 @@
       "extensions": [
         "GitHub.vscode-pull-request-github",
         "aquasecurity.trivy-vulnerability-scanner",
-        "davidanson.vscode-markdownlint",
         "eamodio.gitlens",
-        "github.copilot",
-        "ms-azuretools.vscode-docker",
-        "redhat.vscode-yaml"
+        "github.copilot"
       ],
       "settings": {
         "editor.formatOnSave": true,

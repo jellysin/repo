@@ -27,13 +27,3 @@ test: build
 build:
 	@printf '%s\n' 'Project verification unavailable; see the adoption report and AGENTS.md.' >&2
 	@exit 1
-
-# BEGIN praetor documentation gate
-.PHONY: docs-lint docs-figures
-verify-all: docs-lint docs-figures
-docs-lint:
-	@node tools/markdownlint/verify.mjs
-docs-figures:
-	@node tools/figures/build.mjs check
-	@node tools/figures/build.mjs sources
-# END praetor documentation gate
