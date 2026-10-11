@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/jellysin/repo/compare/v1.0.1...v1.0.2) (2026-10-11)
+
+
+### Bug Fixes
+
+* withdraw premature release and rename Plugin Repository ([#10](https://github.com/jellysin/repo/issues/10)) ([3de34bb](https://github.com/jellysin/repo/commit/3de34bb261ee51b0918b6dbc74d1140437fb425a))
+
 ## [1.0.1](https://github.com/jellysin/repo/compare/v1.0.0...v1.0.1) (2026-09-08)
 
 
