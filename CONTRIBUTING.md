@@ -60,3 +60,8 @@ Release-please collects merged changes into version and changelog PRs. Merging s
 PR creates no tag and no GitHub release, because the shared workflow sets
 `skip-github-release`. It does not control individual plugin versions; each plugin
 owns its own release process.
+
+A merged release PR keeps its `autorelease: pending` label until the tag `v<version>`
+names its merge commit, and release-please opens no further release PR while it does.
+The shared workflow moves the label to `autorelease: tagged` once that tag exists;
+never move it by hand.
