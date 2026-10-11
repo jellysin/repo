@@ -108,4 +108,5 @@ Read CONTRIBUTING.md before changing plugin repository publication or branch beh
 - Conventional Commit PR titles, squash merges, required CI with strict: true.
 - Record failed or unavailable checks; never describe intended GitHub settings as verified.
 - All workflows pin one release-helper commit; `scripts/release_helper.py` runs that commit for verification gate, refuses any other.
+- `.python-version` = interpreter pin; verification gate refuses other minor line first. CI interpreter = helper action's.
 - CI job `server-check`: real Jellyfin server must offer every `manifest.json` entry; keep its wrong-ABI negative case.

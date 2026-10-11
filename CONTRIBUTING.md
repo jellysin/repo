@@ -22,7 +22,13 @@ make verify-all
 
 The target runs the governance checks, the policy and catalog validation of
 [release-helper](https://github.com/jellysin/release-helper), the tests and actionlint.
-`Makefile` lists the steps. It needs Python 3.14, git and actionlint.
+`Makefile` lists the steps. It needs git, actionlint and a Python interpreter from the
+minor line that `.python-version` pins.
+
+The first step, `scripts/python_pin.py`, refuses any other minor line before a check runs
+on it. A different patch level passes and is named in the output. Renovate keeps the file
+current. In CI the interpreter comes from the release-helper action, which reads its own
+`.python-version`; the same step checks that both are on one minor line.
 
 `scripts/release_helper.py` runs the helper at the one commit that all workflows pin, so
 that a local run and CI execute the same code. It fetches that commit once into

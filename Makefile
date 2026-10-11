@@ -5,9 +5,16 @@ PYTHON := python3
 ACTIONLINT := actionlint
 # release-helper at the one commit the workflows pin; scripts/release_helper.py fetches it once.
 HELPER := $(PYTHON) -B scripts/release_helper.py
-.PHONY: verify-all compile-context compile-context-verify caveman-sources audit policy catalog test workflows server-check
+.PHONY: verify-all interpreter compile-context compile-context-verify caveman-sources audit policy catalog test workflows server-check
 
-verify-all: compile-context-verify caveman-sources audit policy catalog test workflows
+# One step at a time, in the listed order, also under make -j: no check starts before the interpreter check.
+.NOTPARALLEL:
+
+verify-all: interpreter compile-context-verify caveman-sources audit policy catalog test workflows
+
+# The interpreter must come from the minor line .python-version pins; the other targets run on it.
+interpreter:
+	@$(PYTHON) -B scripts/python_pin.py
 
 compile-context:
 	@$(PRAETORCTL) compile-context

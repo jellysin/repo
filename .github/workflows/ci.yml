@@ -29,7 +29,9 @@ jobs:
           echo "$ACTIONLINT_SHA256  $RUNNER_TEMP/actionlint.tar.gz" | sha256sum --check
           tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP" actionlint
           "$RUNNER_TEMP/actionlint" -color
-      - name: Test the pinned helper runner
+      - name: Check the interpreter against .python-version
+        run: python -B scripts/python_pin.py
+      - name: Run the repository tests
         run: python -B -m unittest discover -s tests
   server-check:
     name: server-check
