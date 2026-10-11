@@ -32,5 +32,7 @@ Source releases must have immutable releases enabled before publication. The
 plugin repository trusts the approved release workflow, not arbitrary self-declared JSON.
 Workflow and allowlist changes require careful review of the trust boundary.
 
-Release-please manages optional plugin repository snapshot tags and the changelog. It does
-not control individual plugin versions; each plugin owns its own release process.
+Release-please collects merged changes into version and changelog PRs. Merging such a
+PR creates no tag and no GitHub release, because the shared workflow sets
+`skip-github-release`. It does not control individual plugin versions; each plugin
+owns its own release process.
