@@ -5,8 +5,11 @@ repository:
   name: repo
   visibility: public
   description: "JellySin Plugin Repository for Jellyfin 12"
-  homepage: ""
-  topics: []
+  homepage: "https://raw.githubusercontent.com/jellysin/repo/main/manifest.json"
+  topics:
+    - jellyfin
+    - jellyfin-plugin
+    - plugin-repository
 # Agent clients and editors in use. The engine generates and verifies the files of these only.
 agent_clients:
   - claude
