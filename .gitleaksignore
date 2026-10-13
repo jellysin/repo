@@ -1,0 +1,6 @@
+# Findings gitleaks reports in the history and that are known not to be secrets. One line per finding:
+# its fingerprint (commit:file:rule:line), with the reason in the comment above it.
+
+# #31: random bytes in a private key frame, planted to show the required scanners check
+# red; merged by mistake through the admin bypass and removed again. It is no key.
+82060f75bbd03f433e65078327fd1d0b41ba58a4:planted-key.pem:private-key:1
