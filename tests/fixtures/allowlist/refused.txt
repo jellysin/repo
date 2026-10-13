@@ -1,0 +1,5 @@
+duplicate-guid.json|Duplicate plugin identity
+wrong-workflow.json|Unapproved release workflow
+unknown-key.json|Invalid allowlist entry
+empty.json|Invalid plugin allowlist
+thirty-three.json|Invalid plugin allowlist

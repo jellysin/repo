@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "plugins": [
+    {
+      "repository": "jellysin/plugin-boundary-00",
+      "guid": "2034650d-a290-4a16-b195-000000000000",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-01",
+      "guid": "2034650d-a290-4a16-b195-000000000001",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-02",
+      "guid": "2034650d-a290-4a16-b195-000000000002",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-03",
+      "guid": "2034650d-a290-4a16-b195-000000000003",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-04",
+      "guid": "2034650d-a290-4a16-b195-000000000004",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-05",
+      "guid": "2034650d-a290-4a16-b195-000000000005",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-06",
+      "guid": "2034650d-a290-4a16-b195-000000000006",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-07",
+      "guid": "2034650d-a290-4a16-b195-000000000007",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-08",
+      "guid": "2034650d-a290-4a16-b195-000000000008",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-09",
+      "guid": "2034650d-a290-4a16-b195-000000000009",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-10",
+      "guid": "2034650d-a290-4a16-b195-00000000000a",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-11",
+      "guid": "2034650d-a290-4a16-b195-00000000000b",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-12",
+      "guid": "2034650d-a290-4a16-b195-00000000000c",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-13",
+      "guid": "2034650d-a290-4a16-b195-00000000000d",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-14",
+      "guid": "2034650d-a290-4a16-b195-00000000000e",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-15",
+      "guid": "2034650d-a290-4a16-b195-00000000000f",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-16",
+      "guid": "2034650d-a290-4a16-b195-000000000010",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-17",
+      "guid": "2034650d-a290-4a16-b195-000000000011",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-18",
+      "guid": "2034650d-a290-4a16-b195-000000000012",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-19",
+      "guid": "2034650d-a290-4a16-b195-000000000013",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-20",
+      "guid": "2034650d-a290-4a16-b195-000000000014",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-21",
+      "guid": "2034650d-a290-4a16-b195-000000000015",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-22",
+      "guid": "2034650d-a290-4a16-b195-000000000016",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-23",
+      "guid": "2034650d-a290-4a16-b195-000000000017",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-24",
+      "guid": "2034650d-a290-4a16-b195-000000000018",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-25",
+      "guid": "2034650d-a290-4a16-b195-000000000019",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-26",
+      "guid": "2034650d-a290-4a16-b195-00000000001a",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-27",
+      "guid": "2034650d-a290-4a16-b195-00000000001b",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-28",
+      "guid": "2034650d-a290-4a16-b195-00000000001c",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-29",
+      "guid": "2034650d-a290-4a16-b195-00000000001d",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-30",
+      "guid": "2034650d-a290-4a16-b195-00000000001e",
+      "signerWorkflow": ".github/workflows/release.yml"
+    },
+    {
+      "repository": "jellysin/plugin-boundary-31",
+      "guid": "2034650d-a290-4a16-b195-00000000001f",
+      "signerWorkflow": ".github/workflows/release.yml"
+    }
+  ]
+}
