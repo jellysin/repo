@@ -57,3 +57,7 @@ labels:
   - name: "dependencies"
     color: "0366d6"
     description: "Pull requests that update a dependency file"
+
+  - name: "ci-platform"
+    color: "d93f0b"
+    description: "make verify-all or the git hooks fail on a platform CI does not gate"
