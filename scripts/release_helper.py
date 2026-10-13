@@ -14,6 +14,13 @@ CACHE = ROOT / ".workingdir" / "cache"
 SOURCE = "https://github.com/jellysin/release-helper.git"
 # Every use of the helper: an action or a reusable workflow, followed by the reference that selects its code.
 REFERENCE = re.compile(r"jellysin/release-helper/[^\s@]+@(\S+)")
+# The helper's earlier name, which GitHub still resolves: a reference under it would run a helper
+# this check never reads, such as the plugin-tooling commit 9efa4a2 (#4) replaced.
+OLD_NAME = re.compile(r"jellysin/plugin-tooling/[^\s@]+@\S+")
+# Helper commits a fix replaced, with the reason a workflow must not pin them again.
+REPLACED = {
+    "18035406096fc160acccc0afa7238aa314f0a4aa": "replaced in 9efa4a2 (#4): it does not validate complete release inventories",
+}
 COMMIT = re.compile(r"[0-9a-f]{40}")
 MAX_WORKFLOWS = 64
 GIT_SECONDS = 20
@@ -26,11 +33,19 @@ class PinError(Exception):
 
 
 def pinned(workflows):
-    """Return the one commit all workflows pin; refuse no reference, a tag or branch, and two different commits."""
+    """Return the one commit all workflows pin; refuse no reference, a tag or branch, two different commits,
+    a reference under the helper's old name and a commit a fix replaced."""
     files = sorted(Path(workflows).glob("*.yml"))
     if len(files) > MAX_WORKFLOWS:
         raise PinError(f"More than {MAX_WORKFLOWS} workflow files; the pin is not read from a part of them")
-    found = sorted({reference for path in files for reference in REFERENCE.findall(path.read_text(encoding="utf-8"))})
+    texts = [path.read_text(encoding="utf-8") for path in files]
+    old = sorted({reference for text in texts for reference in OLD_NAME.findall(text)})
+    if old:
+        raise PinError("Workflows reference jellysin/plugin-tooling, release-helper's old name: " + ", ".join(old))
+    found = sorted({reference for text in texts for reference in REFERENCE.findall(text)})
+    replaced = [f"{reference} ({REPLACED[reference]})" for reference in found if reference in REPLACED]
+    if replaced:
+        raise PinError("Workflows pin a replaced release-helper commit: " + ", ".join(replaced))
     if not found:
         raise PinError(f"No workflow in {workflows} references jellysin/release-helper")
     loose = [reference for reference in found if not COMMIT.fullmatch(reference)]

@@ -60,6 +60,24 @@ class Pinned(unittest.TestCase):
             with self.subTest(reference=reference), self.assertRaisesRegex(release_helper.PinError, "not a full commit"):
                 release_helper.pinned(workflows(self.directory, ci=uses(reference)))
 
+    # Regression of 9efa4a2 (#4): the commit it replaced, and the old repository name it was pinned
+    # under, are refused instead of passing unread.
+    def test_replaced_commit_is_refused(self):
+        replaced = next(iter(release_helper.REPLACED))
+        with self.assertRaisesRegex(release_helper.PinError, r"replaced release-helper commit.*9efa4a2"):
+            release_helper.pinned(workflows(self.directory, ci=uses(replaced)))
+
+    def test_old_repository_name_is_refused(self):
+        old = f"      - uses: jellysin/plugin-tooling/actions/check@{next(iter(release_helper.REPLACED))} # v1.0.0\n"
+        with self.assertRaisesRegex(release_helper.PinError, "jellysin/plugin-tooling, release-helper's old name"):
+            release_helper.pinned(workflows(self.directory, ci=uses(FIRST) + old))
+
+    def test_contributing_names_no_replaced_pin(self):
+        text = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        self.assertNotIn("jellysin/plugin-tooling", text)
+        for commit in release_helper.REPLACED:
+            self.assertNotIn(commit[:7], text)
+
     def test_no_reference_is_refused(self):
         with self.assertRaisesRegex(release_helper.PinError, "No workflow"):
             release_helper.pinned(workflows(self.directory, ci="jobs: {}\n"))
