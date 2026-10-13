@@ -29,6 +29,16 @@ jobs:
           echo "$ACTIONLINT_SHA256  $RUNNER_TEMP/actionlint.tar.gz" | sha256sum --check
           tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP" actionlint
           "$RUNNER_TEMP/actionlint" -color
+      # Negative control: the step above is green only if actionlint can fail. It must refuse a
+      # planted workflow whose job lacks runs-on, with exit status 1 and that finding.
+      - name: actionlint refuses a planted workflow defect
+        run: |
+          printf '%s\n' 'on: push' 'jobs:' '  planted:' '    steps:' '      - run: echo planted' > "$RUNNER_TEMP/planted.yml"
+          status=0
+          output="$("$RUNNER_TEMP/actionlint" -no-color "$RUNNER_TEMP/planted.yml" 2>&1)" || status=$?
+          printf '%s\n' "$output"
+          [[ "$status" -eq 1 ]]
+          grep --fixed-strings --quiet '"runs-on" section is missing in job "planted"' <<<"$output"
       - name: Check the interpreter against .python-version
         run: python -B scripts/python_pin.py
       - name: Run the repository tests
@@ -114,6 +124,17 @@ jobs:
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Context integrity
         run: praetorctl compile-context --verify
+      # Negative control: the step above is green only if the check can fail. A copy of the
+      # checkout whose CLAUDE.md drifted from AGENTS.md must be refused with exit status 1.
+      - name: Context integrity refuses a planted stale context
+        run: |
+          cp -R . "$RUNNER_TEMP/stale-context"
+          printf '\nplanted drift\n' >> "$RUNNER_TEMP/stale-context/CLAUDE.md"
+          status=0
+          output="$(cd "$RUNNER_TEMP/stale-context" && praetorctl compile-context --verify 2>&1)" || status=$?
+          printf '%s\n' "$output"
+          [[ "$status" -eq 1 ]]
+          grep --fixed-strings --quiet 'target CLAUDE.md is out of sync with AGENTS.md' <<<"$output"
       - name: HISS audit
         run: praetorctl audit
       - name: Flavor audit
