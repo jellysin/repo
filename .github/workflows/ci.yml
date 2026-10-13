@@ -84,6 +84,25 @@ jobs:
           printf '%s\n' "$output"
           [[ "$status" -eq 1 ]]
           grep --fixed-strings --quiet 'does not offer d0973630-1561-4f3a-b26e-664229e6043e 1.0.0.0 (targetAbi 12.65534.0.0)' <<<"$output"
+      # The boundary where a server silently drops an entry: at the server's own version the
+      # floor fixture must be offered, one patch above it refused. The version is read from the
+      # server, so the step follows the image release-helper pins.
+      - name: The same server offers an entry at its own version and refuses one a patch above
+        run: |
+          output="$(python -B scripts/release_helper.py server-check --manifest "$RUNNER_TEMP/floor.json" 2>&1)"
+          printf '%s\n' "$output"
+          version="$(sed -n 's/^server-check: server version \([0-9]*\.[0-9]*\.[0-9]*\)$/\1/p' <<<"$output")"
+          [[ -n "$version" ]]
+          IFS=. read -r major minor patch <<<"$version"
+          above="$major.$minor.$((patch + 1)).0"
+          jq --arg abi "$version.0" '.[0].versions[0].targetAbi = $abi' "$RUNNER_TEMP/floor.json" > "$RUNNER_TEMP/at-server.json"
+          jq --arg abi "$above" '.[0].versions[0].targetAbi = $abi' "$RUNNER_TEMP/floor.json" > "$RUNNER_TEMP/above-server.json"
+          python -B scripts/release_helper.py server-check --manifest "$RUNNER_TEMP/at-server.json"
+          status=0
+          output="$(python -B scripts/release_helper.py server-check --manifest "$RUNNER_TEMP/above-server.json" 2>&1)" || status=$?
+          printf '%s\n' "$output"
+          [[ "$status" -eq 1 ]]
+          grep --fixed-strings --quiet "does not offer d0973630-1561-4f3a-b26e-664229e6043e 1.0.0.0 (targetAbi $above)" <<<"$output"
   # The scanners the standards declare (facets security:high and agent:sandboxed). Each one is a
   # pinned release whose archive checksum is checked before it runs, and any finding fails the job.
   scanners:
