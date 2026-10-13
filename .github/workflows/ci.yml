@@ -43,6 +43,14 @@ jobs:
         run: python -B scripts/python_pin.py
       - name: Run the repository tests
         run: python -B -m unittest discover -s tests
+      # Every version main publishes stays as it was, and every listed version's download answers
+      # (scripts/manifest_checks.py). A dispatched run of the updater's branch compares with main too.
+      - name: Published manifest versions stay as they were
+        run: |
+          git fetch --no-tags --depth=1 origin main:refs/remotes/origin/main
+          python -B scripts/manifest_checks.py history origin/main
+      - name: Every manifest version can be downloaded
+        run: python -B scripts/manifest_checks.py releases
       # The allowlist check above runs on plugins.json only. Each planted allowlist in
       # tests/fixtures/allowlist/refused.txt must be refused with exit status 1 and its reason,
       # and an allowlist of 32 plugins, the most the helper takes, must pass.

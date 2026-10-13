@@ -5,12 +5,12 @@ PYTHON := python3
 ACTIONLINT := actionlint
 # release-helper at the one commit the workflows pin; scripts/release_helper.py fetches it once.
 HELPER := $(PYTHON) -B scripts/release_helper.py
-.PHONY: verify-all interpreter compile-context compile-context-verify caveman-sources audit policy catalog test workflows server-check
+.PHONY: verify-all interpreter compile-context compile-context-verify caveman-sources audit policy catalog manifest test workflows server-check
 
 # One step at a time, in the listed order, also under make -j: no check starts before the interpreter check.
 .NOTPARALLEL:
 
-verify-all: interpreter compile-context-verify caveman-sources audit policy catalog test workflows
+verify-all: interpreter compile-context-verify caveman-sources audit policy catalog manifest test workflows
 
 # The interpreter must come from the minor line .python-version pins; the other targets run on it.
 interpreter:
@@ -33,6 +33,11 @@ policy:
 
 catalog:
 	@$(HELPER) validate-catalog
+
+# Published versions stay as main has them, and every listed version can be downloaded.
+manifest:
+	@$(PYTHON) -B scripts/manifest_checks.py history origin/main
+	@$(PYTHON) -B scripts/manifest_checks.py releases
 
 test:
 	@$(PYTHON) -B -m unittest discover -s tests
