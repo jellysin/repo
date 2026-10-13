@@ -69,5 +69,9 @@ pre-push:
       run: sh .config/lefthook/engine.sh flavor audit .
     audit:
       run: sh .config/lefthook/engine.sh audit
+    # The gate admits a root without go.mod or Cargo.lock unverified, so the repository's
+    # own tests verify the Python code before a push.
+    tests:
+      run: sh .config/lefthook/python.sh -B -m unittest discover -s tests
     gate:
       run: sh .config/lefthook/engine.sh gate run --path=. --admit-unsupported
