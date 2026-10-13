@@ -2,11 +2,14 @@
 
 import contextlib
 import io
+import os
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -115,6 +118,63 @@ class Main(unittest.TestCase):
     def test_tag_pin_runs_nothing(self):
         self.assertEqual(self.run_main("v1.2.0", {"RELEASE_HELPER": self.source}), 2)
         self.assertIn("not a full commit", self.errors.getvalue())
+
+
+class Deadlines(unittest.TestCase):
+    """The deadlines of the helper run and of every git query, and what an unstartable command does."""
+
+    def setUp(self):
+        self.source = self.enterContext(tempfile.TemporaryDirectory())
+        self.directory = self.enterContext(tempfile.TemporaryDirectory())
+        self.errors = self.enterContext(contextlib.redirect_stderr(io.StringIO()))
+
+    def run_helper(self, body, seconds):
+        """Run main against a stand-in helper whose tools.py is body, under a deadline of seconds."""
+        pin = helper(self.source, body)
+        pins = workflows(self.directory, ci=uses(pin))
+        with mock.patch.object(release_helper, "RUN_SECONDS", seconds):
+            return release_helper.main(
+                ["check-policy"], workflows=pins, cache=self.directory, environment={"RELEASE_HELPER": self.source}
+            )
+
+    # Positive: a helper that finishes within the deadline returns its own exit status.
+    def test_helper_within_the_deadline_returns_its_status(self):
+        self.assertEqual(self.run_helper("import sys, time\ntime.sleep(0.2)\nsys.exit(7)\n", 30), 7)
+
+    # Negative: a helper still running at the deadline is stopped, and main returns 2 at once.
+    def test_helper_past_the_deadline_is_stopped_and_returns_two(self):
+        started = time.monotonic()
+        status = self.run_helper("import time\ntime.sleep(20)\n", 1)
+        self.assertEqual(status, 2)
+        self.assertLess(time.monotonic() - started, 15, "the helper ran past its deadline")
+        self.assertIn("tools.py did not finish", self.errors.getvalue())
+
+    # Negative: an interpreter that cannot start returns 2 instead of raising.
+    def test_unstartable_interpreter_returns_two(self):
+        with mock.patch.object(sys, "executable", str(Path(self.directory) / "no-such-python")):
+            status = self.run_helper("raise SystemExit(0)\n", 30)
+        self.assertEqual(status, 2)
+        self.assertIn("tools.py did not finish", self.errors.getvalue())
+
+    # Boundary: git receives exactly the deadline it was given.
+    def test_git_runs_under_its_deadline(self):
+        done = subprocess.CompletedProcess([], 0, stdout=" out \n", stderr="")
+        with mock.patch.object(release_helper.subprocess, "run", return_value=done) as run:
+            self.assertEqual(release_helper.git(self.directory, 13, "status"), "out")
+        self.assertEqual(run.call_args.kwargs["timeout"], 13)
+
+    # Negative: a git query past its deadline is a PinError naming the command.
+    def test_git_past_its_deadline_is_a_pin_error(self):
+        late = subprocess.TimeoutExpired(["git"], 13)
+        with mock.patch.object(release_helper.subprocess, "run", side_effect=late):
+            with self.assertRaisesRegex(release_helper.PinError, "git fetch did not finish"):
+                release_helper.git(self.directory, 13, "fetch")
+
+    # Negative: a git that cannot start is a PinError naming the command.
+    def test_git_that_cannot_start_is_a_pin_error(self):
+        with mock.patch.dict(os.environ, {"PATH": str(self.directory)}):
+            with self.assertRaisesRegex(release_helper.PinError, "git status did not finish"):
+                release_helper.git(self.directory, 13, "status")
 
 
 if __name__ == "__main__":
