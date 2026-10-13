@@ -111,6 +111,25 @@ jobs:
           printf '%s\n' "$output"
           [[ "$status" -eq 1 ]]
           grep --fixed-strings --quiet "does not offer d0973630-1561-4f3a-b26e-664229e6043e 1.0.0.0 (targetAbi $above)" <<<"$output"
+      # The repository serves Jellyfin 12 plugins and the floor fixture targets ABI 12.0, but the
+      # steps above run release-helper's pinned 12.2 server only. The older 12 releases, pinned
+      # by digest (Docker Hub, read 2026-10-13), must offer manifest.json and the floor fixture
+      # and refuse the wrong-abi fixture too.
+      - name: Jellyfin 12.0 and 12.1 offer every entry and the floor fixture and refuse the wrong-abi one
+        env:
+          IMAGES: >-
+            jellyfin/jellyfin:12.0@sha256:baba630419915985442f315f08b0cf46d9f4c8a0cc4bd38e94a6d35751dd5ef5
+            jellyfin/jellyfin:12.1@sha256:78d3ea1207d1322471fcac39a614f004f2ccf7e878f95ab2977d752f07e4dd7e
+        run: |
+          for image in $IMAGES; do
+            python -B scripts/release_helper.py server-check --manifest manifest.json --image "$image"
+            python -B scripts/release_helper.py server-check --manifest "$RUNNER_TEMP/floor.json" --image "$image"
+            status=0
+            output="$(python -B scripts/release_helper.py server-check --manifest "$RUNNER_TEMP/wrong-abi.json" --image "$image" 2>&1)" || status=$?
+            printf '%s\n' "$output"
+            [[ "$status" -eq 1 ]]
+            grep --fixed-strings --quiet 'does not offer d0973630-1561-4f3a-b26e-664229e6043e 1.0.0.0 (targetAbi 12.65534.0.0)' <<<"$output"
+          done
   # The scanners the standards declare (facets security:high and agent:sandboxed). Each one is a
   # pinned release whose archive checksum is checked before it runs, and any finding fails the job.
   scanners:
