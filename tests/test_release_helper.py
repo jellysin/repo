@@ -14,6 +14,10 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
+import isolated_git  # noqa: E402
+
+isolated_git.isolate()
+
 import release_helper  # noqa: E402
 
 FIRST = "a" * 40

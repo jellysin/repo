@@ -13,6 +13,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
+import isolated_git  # noqa: E402
+
+isolated_git.isolate()
+
 import manifest_checks  # noqa: E402
 
 GUID = "2034650d-a290-4a16-b195-89fb44cfb932"
