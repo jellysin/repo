@@ -43,6 +43,19 @@ jobs:
         run: python -B scripts/python_pin.py
       - name: Run the repository tests
         run: python -B -m unittest discover -s tests
+      # The allowlist check above runs on plugins.json only. Each planted allowlist in
+      # tests/fixtures/allowlist/refused.txt must be refused with exit status 1 and its reason,
+      # and an allowlist of 32 plugins, the most the helper takes, must pass.
+      - name: The allowlist check refuses planted allowlists
+        run: |
+          while IFS='|' read -r file reason; do
+            status=0
+            output="$(python -B scripts/release_helper.py validate-catalog --allowlist "tests/fixtures/allowlist/$file" 2>&1)" || status=$?
+            printf '%s: %s\n' "$file" "$output"
+            [[ "$status" -eq 1 ]]
+            grep --fixed-strings --quiet "jellysin-tooling: $reason" <<<"$output"
+          done < tests/fixtures/allowlist/refused.txt
+          python -B scripts/release_helper.py validate-catalog --allowlist tests/fixtures/allowlist/thirty-two.json
   server-check:
     name: server-check
     runs-on: ubuntu-24.04
