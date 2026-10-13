@@ -1,0 +1,97 @@
+name: Platforms
+# HISS-21 (AGENTS.md) says the gates and hooks run on Linux, macOS and Windows, and CI runs Linux.
+# On every push to main, make verify-all and the git hooks run on Windows and macOS too. These are
+# not required checks; a failing run opens or updates an issue labelled ci-platform for its
+# platform, and the next green run closes it, so a red run cannot stay unseen.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: platforms-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify-all:
+    name: verify-all (${{ matrix.platform }})
+    if: github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            runner: windows-2025
+            actionlint: actionlint_1.7.12_windows_amd64.zip
+            actionlint-sha256: 6e7241b51e6817ea6a047693d8e6fed13b31819c9a0dd6c5a726e1592d22f6e9
+            sha256: sha256sum
+          - platform: macos
+            runner: macos-15
+            actionlint: actionlint_1.7.12_darwin_arm64.tar.gz
+            actionlint-sha256: aba9ced2dee8d27fecca3dc7feb1a7f9a52caefa1eb46f3271ea66b6e0e6953f
+            sha256: shasum -a 256
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      issues: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version-file: .python-version
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.2'
+          cache: false
+      - name: Install actionlint, lefthook and GNU make
+        env:
+          ARCHIVE: ${{ matrix.actionlint }}
+          ARCHIVE_SHA256: ${{ matrix.actionlint-sha256 }}
+          SHA256: ${{ matrix.sha256 }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl --fail --silent --show-error --location --proto '=https' --max-time 60 "https://github.com/rhysd/actionlint/releases/download/v1.7.12/$ARCHIVE" --output "$RUNNER_TEMP/$ARCHIVE"
+          echo "$ARCHIVE_SHA256  $RUNNER_TEMP/$ARCHIVE" | $SHA256 --check
+          case "$ARCHIVE" in
+            *.zip) unzip -q "$RUNNER_TEMP/$ARCHIVE" actionlint.exe -d "$RUNNER_TEMP/bin" ;;
+            *) tar -xzf "$RUNNER_TEMP/$ARCHIVE" -C "$RUNNER_TEMP/bin" actionlint ;;
+          esac
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+          go install github.com/evilmartians/lefthook/v2@v2.1.14
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          if ! command -v make >/dev/null 2>&1; then choco install make --no-progress --yes; fi
+      - name: make verify-all
+        run: |
+          git fetch --no-tags --depth=1 origin main:refs/remotes/origin/main
+          make verify-all PYTHON=python
+      - name: Git hooks
+        run: |
+          lefthook install
+          lefthook run pre-commit --all-files
+          lefthook run pre-push --all-files
+      - name: Open, update or close the ci-platform issue
+        if: always() && (job.status == 'success' || job.status == 'failure')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: verify-all fails on ${{ matrix.platform }}
+          STATUS: ${{ job.status }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create ci-platform --repo "$GITHUB_REPOSITORY" --color d93f0b --force \
+            --description "make verify-all or the git hooks fail on a platform CI does not gate"
+          number="$(gh issue list --repo "$GITHUB_REPOSITORY" --label ci-platform --state open --json number,title \
+            --jq 'map(select(.title == env.TITLE)) | .[0].number // empty')"
+          if [[ "$STATUS" == success ]]; then
+            if [[ -n "$number" ]]; then gh issue close "$number" --repo "$GITHUB_REPOSITORY" --comment "Green again: $RUN"; fi
+          elif [[ -n "$number" ]]; then
+            gh issue comment "$number" --repo "$GITHUB_REPOSITORY" --body "Still failing: $RUN"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --label ci-platform \
+              --body "make verify-all or the git hooks failed in $RUN. The next green run on main closes this issue."
+          fi
