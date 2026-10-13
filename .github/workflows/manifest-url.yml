@@ -1,0 +1,43 @@
+name: Published manifest URL
+# What users add to Jellyfin is the raw URL in README.md, not the file CI checks out. Once a day
+# the URL must serve main's manifest.json, and a real Jellyfin server must offer every entry it
+# serves.
+on:
+  schedule:
+    - cron: '23 5 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: published-manifest-url
+  cancel-in-progress: false
+jobs:
+  published-url:
+    name: published manifest URL
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The raw host caches for a few minutes, so a merge can take that long to show; six tries
+      # a minute apart cover it, and a difference after that fails the job with the diff.
+      - name: The URL in README.md serves main's manifest.json
+        env:
+          URL: https://raw.githubusercontent.com/jellysin/repo/main/manifest.json
+        run: |
+          grep --fixed-strings --quiet "$URL" README.md
+          for attempt in 1 2 3 4 5 6; do
+            curl --fail --silent --show-error --location --proto '=https' --max-time 60 "$URL" --output "$RUNNER_TEMP/published.json"
+            if cmp --silent "$RUNNER_TEMP/published.json" manifest.json; then
+              echo "attempt $attempt: $URL serves main's manifest.json"
+              exit 0
+            fi
+            sleep 60
+          done
+          diff "$RUNNER_TEMP/published.json" manifest.json
+      - name: A real Jellyfin server offers every entry the URL serves
+        uses: jellysin/release-helper/actions/server-check@1357f403704538bee3df4d963268fa43f0b81d50 # v1.2.1
+        with:
+          manifest: ${{ runner.temp }}/published.json
