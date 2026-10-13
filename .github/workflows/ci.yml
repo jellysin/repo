@@ -72,6 +72,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      # The checkout fetches every branch; only the history of the commit under test is scanned.
       - name: No secret in the history (gitleaks)
         env:
           GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
@@ -79,7 +80,7 @@ jobs:
           curl --fail --silent --show-error --location --proto '=https' --max-time 60 https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz --output "$RUNNER_TEMP/gitleaks.tar.gz"
           echo "$GITLEAKS_SHA256  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum --check
           tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP" gitleaks
-          "$RUNNER_TEMP/gitleaks" git --redact --exit-code 1 .
+          "$RUNNER_TEMP/gitleaks" git --log-opts=HEAD --redact --verbose --exit-code 1 .
       - name: No high or critical vulnerability, secret or misconfiguration (trivy)
         env:
           TRIVY_SHA256: c6e65abddb348e25f10549df887045629cf28cc72453cd1c63acb717316b3f3f
