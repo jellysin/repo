@@ -91,9 +91,9 @@ def main(arguments, workflows=WORKFLOWS, cache=CACHE, environment=os.environ):
         return 2
     print(f"release-helper: {pin} in {directory}", file=sys.stderr, flush=True)
     try:
-        return subprocess.run(
-            [sys.executable, "-B", str(directory / "tools.py"), *arguments], cwd=ROOT, timeout=RUN_SECONDS, check=False
-        ).returncode
+        # An argument list without a shell; the directory is the checkout verified against the pin.
+        command = [sys.executable, "-B", str(directory / "tools.py"), *arguments]
+        return subprocess.run(command, cwd=ROOT, timeout=RUN_SECONDS, check=False).returncode  # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-tainted-env-args.dangerous-subprocess-use-tainted-env-args
     except (OSError, subprocess.TimeoutExpired) as error:
         print(f"release-helper: tools.py did not finish: {error}", file=sys.stderr)
         return 2
