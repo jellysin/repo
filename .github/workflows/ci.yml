@@ -62,7 +62,7 @@ jobs:
             output="$(python -B scripts/release_helper.py validate-catalog --allowlist "tests/fixtures/allowlist/$file" 2>&1)" || status=$?
             printf '%s: %s\n' "$file" "$output"
             [[ "$status" -eq 1 ]]
-            grep --fixed-strings --quiet "jellysin-tooling: $reason" <<<"$output"
+            grep --fixed-strings --quiet "jellysin-release-helper: $reason" <<<"$output"
           done < tests/fixtures/allowlist/refused.txt
           python -B scripts/release_helper.py validate-catalog --allowlist tests/fixtures/allowlist/thirty-two.json
   server-check:
