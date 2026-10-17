@@ -53,7 +53,8 @@ jobs:
         run: python -B scripts/manifest_checks.py releases
       # The allowlist check above runs on plugins.json only. Each planted allowlist in
       # tests/fixtures/allowlist/refused.txt must be refused with exit status 1 and its reason,
-      # and an allowlist of 32 plugins, the most the helper takes, must pass.
+      # and an allowlist of 32 plugins, the most the helper takes, must pass. The check also reads
+      # manifest.json, so that allowlist holds every plugin of plugins.json.
       - name: The allowlist check refuses planted allowlists
         run: |
           while IFS='|' read -r file reason; do
