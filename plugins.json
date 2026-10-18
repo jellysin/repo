@@ -4,7 +4,7 @@
     {
       "repository": "jellysin/plugin-lastfm",
       "guid": "2034650d-a290-4a16-b195-89fb44cfb932",
-      "signerWorkflow": ".github/workflows/release.yml"
+      "signerWorkflow": ".github/workflows/build-signed.yml"
     }
   ]
 }
