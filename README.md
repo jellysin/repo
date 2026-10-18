@@ -37,8 +37,10 @@ release is currently approved for installation from this plugin repository.
 
 ## Publication
 
-An allowlist binds each plugin GUID to one public source repository and the
-approved `.github/workflows/release.yml`. When enabled, the updater is configured
+An allowlist binds each plugin GUID to one public source repository and the one
+workflow that signs its release artifacts: `.github/workflows/release.yml` or the
+reusable `.github/workflows/build-signed.yml` that release-helper also approves.
+When enabled, the updater is configured
 for minutes 17 and 47 each hour and supports manual dispatch. GitHub scheduled
 runs can be delayed; this is a polling interval, not a publication latency guarantee.
 
