@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   workflow_dispatch:
   workflow_call:
 permissions:
@@ -15,14 +16,19 @@ jobs:
     name: CI
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: jellysin/release-helper/actions/check@330a221ddc12a18bb6afdb3758c9c516bc285ee5 # v1.5.0
+      - uses: jellysin/release-helper/actions/check@c0f6e472f9ac4da2ccdd10afd0a7a167d938b566 # v1.6.0
         with:
           catalog: 'true'
+      - uses: jellysin/release-helper/actions/milestone@c0f6e472f9ac4da2ccdd10afd0a7a167d938b566 # v1.6.0
       - name: Validate workflows
         env:
           ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
@@ -76,7 +82,7 @@ jobs:
         with:
           persist-credentials: false
       - name: A real Jellyfin server offers every entry of manifest.json
-        uses: jellysin/release-helper/actions/server-check@330a221ddc12a18bb6afdb3758c9c516bc285ee5 # v1.5.0
+        uses: jellysin/release-helper/actions/server-check@c0f6e472f9ac4da2ccdd10afd0a7a167d938b566 # v1.6.0
         with:
           manifest: manifest.json
       - name: Write the server check fixtures
@@ -84,7 +90,7 @@ jobs:
           python -B scripts/release_helper.py server-check --emit-fixture floor "$RUNNER_TEMP/floor.json"
           python -B scripts/release_helper.py server-check --emit-fixture wrong-abi "$RUNNER_TEMP/wrong-abi.json"
       - name: The same server offers the floor fixture
-        uses: jellysin/release-helper/actions/server-check@330a221ddc12a18bb6afdb3758c9c516bc285ee5 # v1.5.0
+        uses: jellysin/release-helper/actions/server-check@c0f6e472f9ac4da2ccdd10afd0a7a167d938b566 # v1.6.0
         with:
           manifest: ${{ runner.temp }}/floor.json
       # The step passes only on the refusal it expects; any other failure fails it.
