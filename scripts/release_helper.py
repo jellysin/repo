@@ -12,11 +12,11 @@ ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS = ROOT / ".github" / "workflows"
 CACHE = ROOT / ".workingdir" / "cache"
 SOURCE = "https://github.com/jellysin/release-helper.git"
-# Every use of the helper: an action or a reusable workflow, followed by the reference that selects its code.
-REFERENCE = re.compile(r"jellysin/release-helper/[^\s@]+@(\S+)")
+# Every use of the helper: a root action, an action or a reusable workflow, followed by the reference that selects its code.
+REFERENCE = re.compile(r"jellysin/release-helper(?:/[^\s@]+)?@(\S+)")
 # The helper's earlier name, which GitHub still resolves: a reference under it would run a helper
 # this check never reads, such as the plugin-tooling commit 9efa4a2 (#4) replaced.
-OLD_NAME = re.compile(r"jellysin/plugin-tooling/[^\s@]+@\S+")
+OLD_NAME = re.compile(r"jellysin/plugin-tooling(?:/[^\s@]+)?@\S+")
 # Helper commits a fix replaced, with the reason a workflow must not pin them again.
 REPLACED = {
     "18035406096fc160acccc0afa7238aa314f0a4aa": "replaced in 9efa4a2 (#4): it does not validate complete release inventories",
