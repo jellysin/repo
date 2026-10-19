@@ -31,9 +31,10 @@ in Jellyfin's plugin repository settings:
 https://raw.githubusercontent.com/jellysin/repo/main/manifest.json
 ```
 
-The plugin repository is empty. [JellySin Last.fm](https://github.com/jellysin/plugin-lastfm)
-is in development; its premature 1.0.0 release has been withdrawn. No plugin
-release is currently approved for installation from this plugin repository.
+The plugin repository lists one plugin,
+[JellySin Last.fm](https://github.com/jellysin/plugin-lastfm), with its 0.x
+releases. Every listed version passed the checks described below: an allowlisted
+signer, verified provenance and a real Jellyfin server that offers it.
 
 ## Publication
 
