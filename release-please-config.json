@@ -2,6 +2,7 @@
   "last-release-sha": "7091eef3c4b24215cc621f3a0ac5485507ac6e57",
   "release-type": "simple",
   "include-component-in-tag": false,
+  "skip-github-release": true,
   "packages": {
     ".": {
       "initial-version": "1.0.0",

@@ -4,6 +4,7 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
 concurrency:
@@ -18,7 +19,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: jellysin/release-helper/actions/check@3da7836fa920b9034ccb37dcc01356e49509f020 # v1.3.1
+          fetch-depth: 0
+      - uses: jellysin/release-helper/actions/check@330a221ddc12a18bb6afdb3758c9c516bc285ee5 # v1.5.0
         with:
           catalog: 'true'
       - name: Validate workflows
@@ -74,7 +76,7 @@ jobs:
         with:
           persist-credentials: false
       - name: A real Jellyfin server offers every entry of manifest.json
-        uses: jellysin/release-helper/actions/server-check@3da7836fa920b9034ccb37dcc01356e49509f020 # v1.3.1
+        uses: jellysin/release-helper/actions/server-check@330a221ddc12a18bb6afdb3758c9c516bc285ee5 # v1.5.0
         with:
           manifest: manifest.json
       - name: Write the server check fixtures
@@ -82,7 +84,7 @@ jobs:
           python -B scripts/release_helper.py server-check --emit-fixture floor "$RUNNER_TEMP/floor.json"
           python -B scripts/release_helper.py server-check --emit-fixture wrong-abi "$RUNNER_TEMP/wrong-abi.json"
       - name: The same server offers the floor fixture
-        uses: jellysin/release-helper/actions/server-check@3da7836fa920b9034ccb37dcc01356e49509f020 # v1.3.1
+        uses: jellysin/release-helper/actions/server-check@330a221ddc12a18bb6afdb3758c9c516bc285ee5 # v1.5.0
         with:
           manifest: ${{ runner.temp }}/floor.json
       # The step passes only on the refusal it expects; any other failure fails it.
