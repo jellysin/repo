@@ -62,10 +62,45 @@ Source releases must have immutable releases enabled before publication. The
 plugin repository trusts the approved release workflow, not arbitrary self-declared JSON.
 Workflow and allowlist changes require careful review of the trust boundary.
 
-Release-please collects merged changes into version and changelog PRs. Merging such a
-PR creates no tag and no GitHub release, because the shared workflow sets
-`skip-github-release`. It does not control individual plugin versions; each plugin
-owns its own release process.
+Release-please collects merged changes into version and changelog PRs. Release-please
+itself creates no tag and no GitHub release: `release-please-config.json` sets
+`skip-github-release: true` and the shared workflow passes the same input. It does not
+control individual plugin versions; each plugin owns its own release process.
+
+When a release PR is merged on main, `release-automation.yml` runs release-please with
+`prepare-release: true`, which dispatches `prepare-release.yml`. `prepare-release.yml`
+creates the exact `v<version>` tag on the merge commit and an unpublished draft release
+with the changelog section, then dispatches `release.yml` at the tag.
+
+The release workflow (`release.yml`) runs in three stages:
+
+1. `verify`: calls `ci.yml` under a read-only token to validate the repository gate.
+2. `build`: calls `build-signed.yml` to verify tag ancestry against `origin/main`, package
+   the source archive via `make dist`, generate provenance and SBOM attestations, sign
+   each artifact with cosign (`cosign sign-blob --bundle`), and upload the signed bundle.
+3. `publish`: downloads the artifact, verifies cosign signatures and GitHub attestations,
+   copies signature bundles to `dist/`, and publishes the immutable release via
+   `jellysin/release-helper/actions/publish`.
+
+Published releases carry:
+
+- Source archive (`repo-<version>.tar.gz`)
+- `release.json`
+- `sbom.spdx.json`
+- `checksums.txt`
+- A `.sigstore.json` signature bundle per asset file
+
+Adopters verify any downloaded asset with cosign:
+
+```sh
+cosign verify-blob \
+  --bundle <asset>.sigstore.json \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity "https://github.com/jellysin/repo/.github/workflows/build-signed.yml@refs/tags/<tag>" \
+  <asset>
+```
+
+Historical releases up to `v1.0.4` carry no assets, provenance, signatures or SBOM.
 
 A merged release PR keeps its `autorelease: pending` label until the tag `v<version>`
 names its merge commit, and release-please opens no further release PR while it does.

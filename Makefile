@@ -5,7 +5,7 @@ PYTHON := python3
 ACTIONLINT := actionlint
 # release-helper at the one commit the workflows pin; scripts/release_helper.py fetches it once.
 HELPER := $(PYTHON) -B scripts/release_helper.py
-.PHONY: verify-all interpreter compile-context compile-context-verify caveman-sources audit policy catalog manifest test workflows server-check
+.PHONY: verify-all interpreter compile-context compile-context-verify caveman-sources audit policy catalog manifest test workflows server-check dist
 
 # One step at a time, in the listed order, also under make -j: no check starts before the interpreter check.
 .NOTPARALLEL:
@@ -48,3 +48,6 @@ workflows:
 # Needs Docker and pulls the Jellyfin server image; CI runs it in the job server-check.
 server-check:
 	@$(HELPER) server-check --manifest manifest.json
+
+dist:
+	$(HELPER) package-source --repo "$(RELEASE_REPO)" --tag "$(RELEASE_TAG)" --output-directory dist
