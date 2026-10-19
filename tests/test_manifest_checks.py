@@ -32,6 +32,30 @@ def manifest(*numbers):
     return [{"guid": GUID, "name": "JellySin Last.fm", "versions": [version(number) for number in numbers]}]
 
 
+class Versions(unittest.TestCase):
+    # Positive: the same entry with a string "1.0.0.0" returns one key.
+    def test_valid_string_version_returns_one_key(self):
+        found = manifest_checks.versions([{"guid": GUID, "versions": [{"version": "1.0.0.0"}]}])
+        self.assertEqual(len(found), 1)
+        self.assertIn((GUID, "1.0.0.0"), found)
+
+    # Negative: non-string version fields are refused.
+    def test_non_string_version_is_refused(self):
+        for v in (1, 1.0, None, True, ["1.0.0.0"], {"a": 1}):
+            with self.subTest(v=v), self.assertRaisesRegex(
+                manifest_checks.ManifestError, "has a version without a number"
+            ):
+                manifest_checks.versions([{"guid": GUID, "versions": [{"version": v}]}])
+
+    # Negative: a plugin without a string GUID is refused.
+    def test_non_string_guid_is_refused(self):
+        for guid in (123, None, ["x"]):
+            with self.subTest(guid=guid), self.assertRaisesRegex(
+                manifest_checks.ManifestError, "a plugin entry has no GUID"
+            ):
+                manifest_checks.versions([{"guid": guid, "versions": [{"version": "1.0.0.0"}]}])
+
+
 class History(unittest.TestCase):
     # Positive: a new version and a new plugin keep every published version as it was.
     def test_additions_pass(self):
@@ -112,6 +136,13 @@ class Main(unittest.TestCase):
         (self.root / "manifest.json").write_text("{", encoding="utf-8")
         self.assertEqual(manifest_checks.main(["releases"], root=self.root), 2)
         self.assertIn("is not JSON", self.errors.getvalue())
+
+    # Negative: a head manifest with a non-string version makes main return 2.
+    def test_head_manifest_with_non_string_version_returns_two(self):
+        self.write([{"guid": GUID, "versions": [{"version": 1}]}])
+        self.assertEqual(manifest_checks.main(["releases"], root=self.root), 2)
+        self.assertEqual(manifest_checks.main(["history", "HEAD"], root=self.root), 2)
+        self.assertIn("has a version without a number", self.errors.getvalue())
 
     def test_repository_manifest_keeps_its_published_versions(self):
         self.assertEqual(manifest_checks.main(["history", "HEAD"], root=ROOT), 0)
