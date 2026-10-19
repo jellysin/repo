@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.4](https://github.com/jellysin/repo/compare/v1.0.3...v1.0.4) (2026-10-19)
+
+
+### Bug Fixes
+
+* accept the Last.fm plugin's build-signed release attestations ([#53](https://github.com/jellysin/repo/issues/53)) ([b6ec458](https://github.com/jellysin/repo/commit/b6ec458fb76a48f6f4ba499d582f4121bfc6f296))
+* **pin:** read release-helper references without an action path ([#57](https://github.com/jellysin/repo/issues/57)) ([8e096ce](https://github.com/jellysin/repo/commit/8e096cebe564ba875796b338527658fd88c3ad66))
+
 ## [1.0.3](https://github.com/jellysin/repo/compare/v1.0.2...v1.0.3) (2026-10-13)
 
 
