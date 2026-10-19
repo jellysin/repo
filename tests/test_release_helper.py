@@ -109,6 +109,35 @@ class Pinned(unittest.TestCase):
         with self.assertRaisesRegex(release_helper.PinError, "different release-helper commits"):
             release_helper.pinned(workflows(self.directory, ci=uses(FIRST) + commented))
 
+    # Negative: a root reference with a tag alongside a full commit fails closed as not a full commit.
+    def test_root_reference_with_tag_is_refused_as_not_a_full_commit(self):
+        root = "      - uses: jellysin/release-helper@v1.2.0\n"
+        with self.assertRaisesRegex(release_helper.PinError, "not a full commit"):
+            release_helper.pinned(workflows(self.directory, ci=uses(FIRST) + root))
+
+    # Negative: a root reference with a second commit alongside a full commit is refused as different commits.
+    def test_root_reference_with_second_commit_is_refused_as_different_commits(self):
+        root = f"      - uses: jellysin/release-helper@{SECOND}\n"
+        with self.assertRaisesRegex(release_helper.PinError, "different release-helper commits"):
+            release_helper.pinned(workflows(self.directory, ci=uses(FIRST) + root))
+
+    # Positive: a workflow with only a root reference at a full commit returns the commit.
+    def test_root_reference_only_returns_commit(self):
+        root = f"      - uses: jellysin/release-helper@{FIRST}\n"
+        self.assertEqual(release_helper.pinned(workflows(self.directory, ci=root)), FIRST)
+
+    # Negative: a root reference under the old repository name is refused naming plugin-tooling.
+    def test_old_repository_name_root_reference_is_refused(self):
+        old = f"      - uses: jellysin/plugin-tooling@{FIRST}\n"
+        with self.assertRaisesRegex(release_helper.PinError, "jellysin/plugin-tooling, release-helper's old name"):
+            release_helper.pinned(workflows(self.directory, ci=uses(FIRST) + old))
+
+    # Negative: a different repository sharing a prefix name is not counted as a reference.
+    def test_shared_prefix_repository_is_not_counted(self):
+        sandbox = "      - uses: jellysin/release-helper-sandbox/actions/x@main\n"
+        with self.assertRaisesRegex(release_helper.PinError, r"No workflow .* references"):
+            release_helper.pinned(workflows(self.directory, ci=sandbox))
+
 
 class Checkout(unittest.TestCase):
     def setUp(self):
