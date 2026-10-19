@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: jellysin/release-helper/actions/catalog@f1ffebfa67f8b8f37d94b8fc22174e9f75dbd28e # v1.2.3
+      - uses: jellysin/release-helper/actions/catalog@3da7836fa920b9034ccb37dcc01356e49509f020 # v1.3.1
         with:
           token: ${{ github.token }}
       - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
