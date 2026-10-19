@@ -91,6 +91,24 @@ class Pinned(unittest.TestCase):
         with self.assertRaisesRegex(release_helper.PinError, "More than"):
             release_helper.pinned(workflows(self.directory, **files))
 
+    # Negative: a commented-out stale pin fails closed as not a full commit because
+    # the text check reads comments too.
+    def test_commented_out_stale_pin_is_refused_as_not_a_full_commit(self):
+        commented = "      # - uses: jellysin/release-helper/actions/check@old\n"
+        with self.assertRaisesRegex(release_helper.PinError, "not a full commit"):
+            release_helper.pinned(workflows(self.directory, ci=uses(FIRST) + commented))
+
+    # Positive: the same workflow without the commented line returns the commit.
+    def test_workflow_without_commented_pin_returns_commit(self):
+        self.assertEqual(release_helper.pinned(workflows(self.directory, ci=uses(FIRST))), FIRST)
+
+    # Boundary: a commented-out line with a second full 40-hex commit is refused as
+    # different release-helper commits.
+    def test_commented_out_second_commit_is_refused_as_different_commits(self):
+        commented = f"      # - uses: jellysin/release-helper/actions/check@{SECOND}\n"
+        with self.assertRaisesRegex(release_helper.PinError, "different release-helper commits"):
+            release_helper.pinned(workflows(self.directory, ci=uses(FIRST) + commented))
+
 
 class Checkout(unittest.TestCase):
     def setUp(self):
