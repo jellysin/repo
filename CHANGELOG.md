@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.5](https://github.com/jellysin/repo/compare/v1.0.4...v1.0.5) (2026-10-24)
+
+
+### Bug Fixes
+
+* **ci:** check out full history and tags in the platform runs ([#71](https://github.com/jellysin/repo/issues/71)) ([8b174c8](https://github.com/jellysin/repo/commit/8b174c8d34d439b8e5953367ffb8e1edc6dcbaed))
+
 ## [1.0.4](https://github.com/jellysin/repo/compare/v1.0.3...v1.0.4) (2026-10-19)
 
 
