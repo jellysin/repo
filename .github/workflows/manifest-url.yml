@@ -38,6 +38,6 @@ jobs:
           done
           diff "$RUNNER_TEMP/published.json" manifest.json
       - name: A real Jellyfin server offers every entry the URL serves
-        uses: jellysin/release-helper/actions/server-check@c0f6e472f9ac4da2ccdd10afd0a7a167d938b566 # v1.6.0
+        uses: jellysin/release-helper/actions/server-check@0c04f543518359a7fc56dfca10ed918ac9919d08 # v1.6.2
         with:
           manifest: ${{ runner.temp }}/published.json
