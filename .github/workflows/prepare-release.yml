@@ -23,13 +23,14 @@ jobs:
     permissions:
       contents: write
       actions: write
+      pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
       - name: Create the tag and one unpublished draft
-        uses: jellysin/release-helper/actions/prepare@c0f6e472f9ac4da2ccdd10afd0a7a167d938b566 # v1.6.0
+        uses: jellysin/release-helper/actions/prepare@0c04f543518359a7fc56dfca10ed918ac9919d08 # v1.6.2
         with:
           tag: ${{ inputs.tag }}
           commit: ${{ inputs.commit }}

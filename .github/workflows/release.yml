@@ -63,7 +63,7 @@ jobs:
       - name: Copy signature bundles to dist
         run: |
           cp -n signatures/*.sigstore.json dist/
-      - uses: jellysin/release-helper/actions/publish@c0f6e472f9ac4da2ccdd10afd0a7a167d938b566 # v1.6.0
+      - uses: jellysin/release-helper/actions/publish@0c04f543518359a7fc56dfca10ed918ac9919d08 # v1.6.2
         with:
           directory: dist
           tag: ${{ github.ref_name }}
