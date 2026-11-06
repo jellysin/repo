@@ -18,12 +18,12 @@ def validate_release_please_config(text):
     """Refuse a config that sets last-release-sha at top level or in any package."""
     config = json.loads(text)
     if not isinstance(config, dict):
-        raise ValueError("release-please-config.json is not an object")
+        raise TypeError("release-please-config.json is not an object")
     if FORBIDDEN in config:
         raise ValueError(f"release-please-config.json sets {FORBIDDEN}")
     packages = config.get("packages", {})
     if not isinstance(packages, dict):
-        raise ValueError("release-please-config.json packages is not an object")
+        raise TypeError("release-please-config.json packages is not an object")
     for path, package in packages.items():
         if isinstance(package, dict) and FORBIDDEN in package:
             raise ValueError(f"release-please-config.json package {path!r} sets {FORBIDDEN}")
@@ -48,8 +48,12 @@ class ReleasePleaseConfigTests(unittest.TestCase):
         self.assertTrue(validate_release_please_config(json.dumps({"release-type": "simple"})))
 
     def test_refuse_non_object_config(self):
-        with self.assertRaisesRegex(ValueError, "not an object"):
+        with self.assertRaisesRegex(TypeError, "not an object"):
             validate_release_please_config("[]")
+
+    def test_refuse_non_object_packages(self):
+        with self.assertRaisesRegex(TypeError, "packages is not an object"):
+            validate_release_please_config(json.dumps({"packages": ["."]}))
 
 
 if __name__ == "__main__":
