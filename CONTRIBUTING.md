@@ -67,6 +67,13 @@ itself creates no tag and no GitHub release: `release-please-config.json` sets
 `skip-github-release: true` and the shared workflow passes the same input. It does not
 control individual plugin versions; each plugin owns its own release process.
 
+Release-please opens and updates release PRs with a token of the release App, not
+with the workflow's `GITHUB_TOKEN`: GitHub starts no workflow for a pull request that
+`GITHUB_TOKEN` creates, so the required checks of a release PR would never run. The App
+is installed on this repository only. Its client id is the `RELEASE_APP_CLIENT_ID`
+repository variable and its key the `RELEASE_APP_PRIVATE_KEY` repository secret. No
+other workflow uses the App.
+
 When a release PR is merged on main, `release-automation.yml` runs release-please with
 `prepare-release: true`, which dispatches `prepare-release.yml`. `prepare-release.yml`
 creates the exact `v<version>` tag on the merge commit and an unpublished draft release

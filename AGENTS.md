@@ -114,7 +114,7 @@ Read CONTRIBUTING.md before changing plugin repository publication or branch beh
 - Review GUID, source repository and signer workflow together when changing `plugins.json`.
 - Only verified, immutable public releases may add entries. Never weaken provenance validation.
 - Pin shared Actions to full reviewed SHAs; update through Renovate PRs.
-- Use only this repository's GITHUB_TOKEN. No cross-repository write token or release App.
+- Use only this repository's GITHUB_TOKEN, except release-please: it opens release PRs with release App token (`RELEASE_APP_CLIENT_ID` variable, `RELEASE_APP_PRIVATE_KEY` secret), installed on this repository only, so PR checks start. No other App, no cross-repository write token, no PAT.
 - Plugin repository PRs change only `manifest.json`; bot CI is explicitly dispatched.
 - Default permissions are read-only; writes have explicit job scope and timeouts.
 - Conventional Commit PR titles, squash merges, required CI with strict: true.
