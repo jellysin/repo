@@ -21,6 +21,15 @@ ROOT = Path(__file__).resolve().parent.parent
 CONFIG = ROOT / "release-please-config.json"
 FORBIDDEN = "last-release-sha"
 NOTES_DELIMITER = "---"
+LOCAL_GATE = "`make verify-all`"
+
+
+def local_gate_item(template_text):
+    """Return the template checklist text that records the local gate."""
+    for line in template_text.splitlines():
+        if line.startswith("- [ ] ") and LOCAL_GATE in line:
+            return line[len("- [ ] "):]
+    raise ValueError("pull request template has no local gate item")
 
 
 def validate_release_please_config(text):
@@ -55,6 +64,9 @@ def validate_release_pr_body(text, template_text, ci_text):
     body = "\n\n".join(parts)
     validate_pr_body(body, template_text)
     validate_ci_claims(parts[1], ci_text)
+    item = local_gate_item(template_text)
+    if not any(line.startswith("- [") and item in line for line in parts[1].splitlines()):
+        raise ValueError(f"release-please-config.json pull-request-footer lacks the item {item!r}")
     return True
 
 
@@ -117,6 +129,20 @@ class ReleasePrBodyTests(unittest.TestCase):
         footer = "## Pre-Merge Verification Checklist\n\n- [x] The title follows Conventional Commits."
         config = dict(self.config, **{"pull-request-footer": footer})
         with self.assertRaisesRegex(ValueError, "does not name CI job"):
+            self.check(config)
+
+    def test_refuse_footer_without_local_gate_item(self):
+        lines = self.config["pull-request-footer"].splitlines()
+        footer = "\n".join(line for line in lines if "Local verification passed" not in line)
+        config = dict(self.config, **{"pull-request-footer": footer})
+        with self.assertRaisesRegex(ValueError, "lacks the item"):
+            self.check(config)
+
+    def test_boundary_local_gate_named_outside_a_checklist_item(self):
+        lines = self.config["pull-request-footer"].splitlines()
+        footer = "\n".join(line.replace("- [ ] Local", "Local") for line in lines)
+        config = dict(self.config, **{"pull-request-footer": footer})
+        with self.assertRaisesRegex(ValueError, "lacks the item"):
             self.check(config)
 
     def test_boundary_blank_header_is_missing(self):
