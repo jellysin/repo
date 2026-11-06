@@ -26,6 +26,7 @@ with tempfile.TemporaryDirectory() as path:
 
 
 def git(directory, *arguments):
+    """Run git in the directory and return its output; raise on a non-zero exit."""
     done = subprocess.run(["git", "-C", str(directory), *arguments], check=False, timeout=60, capture_output=True, text=True)
     if done.returncode != 0:
         raise AssertionError(f"git {arguments[0]} failed ({done.returncode}): {done.stderr.strip()}")
@@ -66,6 +67,7 @@ class PushFromLinkedWorktree(unittest.TestCase):
 
 class EveryModuleIsolates(unittest.TestCase):
     def test_every_test_module_that_runs_git_isolates_first(self):
+        """Every test module that runs git calls isolated_git.isolate() first."""
         for path in sorted(TESTS.glob("test_*.py")):
             text = path.read_text(encoding="utf-8")
             if '"git"' in text or "release_helper" in text or "manifest_checks" in text:

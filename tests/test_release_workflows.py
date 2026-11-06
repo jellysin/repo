@@ -74,6 +74,7 @@ class ReleaseWorkflowsPositiveTests(unittest.TestCase):
     """Positive 3D tests for release workflows, pins, and step sequencing."""
 
     def test_all_workflow_uses_pinned_to_40_hex_sha(self):
+        """Every uses: line in the new workflows pins a 40-hex commit."""
         for filename in NEW_WORKFLOW_FILES:
             content = (WORKFLOWS / filename).read_text(encoding="utf-8")
             self.assertTrue(validate_uses_pins(content))
@@ -145,6 +146,7 @@ class ReleaseWorkflowsBoundaryTests(unittest.TestCase):
     """Boundary 3D tests enforcing read-only workflow permissions and job-scoped writes."""
 
     def test_all_new_workflows_have_read_only_top_level_permissions(self):
+        """Every new workflow sets read-only top-level permissions."""
         for filename in NEW_WORKFLOW_FILES:
             content = (WORKFLOWS / filename).read_text(encoding="utf-8")
             self.assertTrue(validate_workflow_permissions(content))

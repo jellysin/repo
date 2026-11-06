@@ -132,6 +132,7 @@ class ReleasePrBodyTests(unittest.TestCase):
             self.check(config)
 
     def test_refuse_footer_without_local_gate_item(self):
+        """A footer without the template's local gate item is refused."""
         lines = self.config["pull-request-footer"].splitlines()
         footer = "\n".join(line for line in lines if "Local verification passed" not in line)
         config = dict(self.config, **{"pull-request-footer": footer})
@@ -139,6 +140,7 @@ class ReleasePrBodyTests(unittest.TestCase):
             self.check(config)
 
     def test_boundary_local_gate_named_outside_a_checklist_item(self):
+        """Naming the local gate in plain text, not as a checklist item, is refused."""
         lines = self.config["pull-request-footer"].splitlines()
         footer = "\n".join(line.replace("- [ ] Local", "Local") for line in lines)
         config = dict(self.config, **{"pull-request-footer": footer})
