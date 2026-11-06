@@ -39,8 +39,8 @@ jobs:
       run:
         shell: bash
     steps:
-      # make policy checks release-please's last-release-sha against the release tags, so it
-      # needs full history and tags, as the checks job in ci.yml has.
+      # Full history and tags, as the checks job in ci.yml checks out, so make policy sees the
+      # same tree.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
