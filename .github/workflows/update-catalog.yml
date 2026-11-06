@@ -44,7 +44,7 @@ jobs:
 
             ## Pre-Merge Verification Checklist
 
-            - [ ] `make verify-all`, server-check and the scanners pass in the CI run this workflow dispatches on this branch; the required checks block the merge until they do.
+            - [ ] The CI run this workflow dispatches on this branch passes: the CI job (workflow lint, interpreter pin, repository tests, manifest and allowlist checks), server-check, scanners and governance (praetor); the required checks block the merge until they do. It does not run `make verify-all`, which stays a local check.
             - [x] Only `manifest.json` changes; no function, public interface or agent context changes, so the HISS, 3D test and context items do not apply.
             - [x] The commit message follows Conventional Commits.
       - name: Explicitly dispatch CI for bot pull request

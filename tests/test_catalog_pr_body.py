@@ -2,7 +2,8 @@
 
 CodeRabbit flagged PR 67: the body lacked the template's "## Description" and
 "## Pre-Merge Verification Checklist" headings, and its paragraph was hard-wrapped
-(the forge renders every newline as a line break).
+(the forge renders every newline as a line break). CodeRabbit flagged PR 83: the
+checklist claimed the dispatched CI run passes `make verify-all`, which ci.yml never runs.
 """
 
 import re
@@ -12,6 +13,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 WORKFLOW = ROOT / ".github" / "workflows" / "update-catalog.yml"
 TEMPLATE = ROOT / ".github" / "pull_request_template.md"
+CI = ROOT / ".github" / "workflows" / "ci.yml"
+JOB_NAME_RE = re.compile(r"^    name: (.+)$", re.MULTILINE)
 BODY_RE = re.compile(r"^(?P<indent>\s*)body: \|\n(?P<block>(?:(?P=indent)  .*\n|\n)+)", re.MULTILINE)
 HEADING_RE = re.compile(r"^## .+$", re.MULTILINE)
 
@@ -38,6 +41,17 @@ def validate_pr_body(body, template_text):
     return True
 
 
+def validate_ci_claims(body, ci_text):
+    """Refuse a body that omits a CI job name or claims CI runs `make verify-all`."""
+    for name in JOB_NAME_RE.findall(ci_text):
+        if name not in body:
+            raise ValueError(f"pull request body does not name CI job {name!r}")
+    for line in body.splitlines():
+        if "make verify-all" in line and "does not run `make verify-all`" not in line:
+            raise ValueError("pull request body claims CI runs make verify-all")
+    return True
+
+
 class CatalogPrBodyTests(unittest.TestCase):
     def setUp(self):
         self.template = TEMPLATE.read_text(encoding="utf-8")
@@ -58,6 +72,24 @@ class CatalogPrBodyTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "hard-wraps"):
             validate_pr_body(body, self.template)
+
+    def test_workflow_body_names_ci_jobs(self):
+        body = extract_body(WORKFLOW.read_text(encoding="utf-8"))
+        self.assertTrue(validate_ci_claims(body, CI.read_text(encoding="utf-8")))
+
+    def test_refuse_ci_verify_all_claim(self):
+        ci_text = "jobs:\n  checks:\n    name: CI\n"
+        body = "- [ ] CI and `make verify-all` pass in the dispatched CI run.\n"
+        with self.assertRaisesRegex(ValueError, "claims CI runs make verify-all"):
+            validate_ci_claims(body, ci_text)
+
+    def test_refuse_missing_ci_job(self):
+        ci_text = "jobs:\n  checks:\n    name: CI\n  scan:\n    name: scanners\n"
+        with self.assertRaisesRegex(ValueError, "'scanners'"):
+            validate_ci_claims("- [ ] CI passes.\n", ci_text)
+
+    def test_boundary_ci_without_jobs(self):
+        self.assertTrue(validate_ci_claims("Nothing to name.\n", "on: push\n"))
 
     def test_boundary_template_without_headings(self):
         self.assertTrue(validate_pr_body("One line.\n", "no headings here\n"))
