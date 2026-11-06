@@ -30,6 +30,7 @@ def uses(reference, target="actions/check"):
 
 
 def workflows(directory, **files):
+    """Write each named workflow text into the directory and return the directory."""
     for name, text in files.items():
         (Path(directory) / f"{name}.yml").write_text(text, encoding="utf-8")
     return Path(directory)
@@ -60,6 +61,7 @@ class Pinned(unittest.TestCase):
             release_helper.pinned(workflows(self.directory, ci=uses(FIRST), update=uses(SECOND, "actions/catalog")))
 
     def test_tag_and_short_commit_are_refused(self):
+        """A tag, a branch name or a short commit is refused as a pin."""
         for reference in ("v1.2.0", "main", FIRST[:39]):
             with self.subTest(reference=reference), self.assertRaisesRegex(release_helper.PinError, "not a full commit"):
                 release_helper.pinned(workflows(self.directory, ci=uses(reference)))
@@ -77,6 +79,7 @@ class Pinned(unittest.TestCase):
             release_helper.pinned(workflows(self.directory, ci=uses(FIRST) + old))
 
     def test_contributing_names_no_replaced_pin(self):
+        """CONTRIBUTING.md names neither the old repository nor a replaced commit."""
         text = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
         self.assertNotIn("jellysin/plugin-tooling", text)
         for commit in release_helper.REPLACED:
@@ -87,6 +90,7 @@ class Pinned(unittest.TestCase):
             release_helper.pinned(workflows(self.directory, ci="jobs: {}\n"))
 
     def test_more_files_than_the_bound_are_refused(self):
+        """More workflow files than MAX_WORKFLOWS are refused."""
         files = {f"w{number}": uses(FIRST) for number in range(release_helper.MAX_WORKFLOWS + 1)}
         with self.assertRaisesRegex(release_helper.PinError, "More than"):
             release_helper.pinned(workflows(self.directory, **files))
