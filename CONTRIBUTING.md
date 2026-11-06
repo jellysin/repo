@@ -107,8 +107,9 @@ names its merge commit, and release-please opens no further release PR while it 
 The shared workflow moves the label to `autorelease: tagged` once that tag exists;
 never move it by hand.
 
-`release-please-config.json` sets `last-release-sha` to the merge commit of the last
-release PR, now release 1.0.4 (tag `v1.0.4`). The key exists because release 1.0.1 was
-withdrawn without a tag and release-please would otherwise have collected the whole
-history again. Release-please never ignores this key: after every merged release PR,
-move it to that release commit, or the next release PR repeats the same entries.
+`release-please-config.json` sets no `last-release-sha`. Release-please finds the last
+release from the tag `v<version>` that `.release-please-manifest.json` names. The key was
+set from release 1.0.1, which was withdrawn without a tag, until release 1.0.4; with it set,
+the release-helper check refuses every release PR, because the PR raises the manifest
+version before its tag exists. Do not set it again; if a release PR repeats entries of an
+earlier release, fix the missing tag instead.
