@@ -36,11 +36,17 @@ jobs:
           add-paths: manifest.json
           commit-message: 'chore: add verified plugin releases to plugin repository'
           title: 'chore: add verified plugin releases to plugin repository'
+          # Keep the template headings and one line per paragraph: the forge renders every newline.
           body: |
-            Adds published plugin versions after checking the allowlist, immutable release state,
-            signed provenance, exact source tag and commit, archive contents and checksums.
+            ## Description
 
-            Existing plugin repository versions are preserved. CI is explicitly dispatched on this branch.
+            Adds published plugin versions after checking the allowlist, immutable release state, signed provenance, exact source tag and commit, archive contents and checksums. Existing plugin repository versions are preserved.
+
+            ## Pre-Merge Verification Checklist
+
+            - [ ] The CI run this workflow dispatches on this branch passes: the CI job (workflow lint, interpreter pin, repository tests, manifest and allowlist checks), server-check, scanners and governance (praetor); the required checks block the merge until they do. It does not run `make verify-all`, which stays a local check.
+            - [x] Only `manifest.json` changes; no function, public interface or agent context changes, so the HISS, 3D test and context items do not apply.
+            - [x] The commit message follows Conventional Commits.
       - name: Explicitly dispatch CI for bot pull request
         if: steps.repository-pr.outputs.pull-request-number != ''
         env:
