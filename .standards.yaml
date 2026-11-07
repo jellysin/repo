@@ -48,3 +48,6 @@ overrides:
     review_mode: single_maintainer
     # Declared at its live value; the forge default is the stricter one.
     require_extra_approval_for_unattributed_changes: true
+release:
+  e2e:
+    since: 021427f6ce279b1d4d403d6ff48599d6c526dc68
