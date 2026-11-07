@@ -29,6 +29,7 @@ def version(number, checksum="0" * 32):
 
 
 def manifest(*numbers):
+    """Return a one-plugin manifest with a version entry per number."""
     return [{"guid": GUID, "name": "JellySin Last.fm", "versions": [version(number) for number in numbers]}]
 
 
@@ -41,6 +42,7 @@ class Versions(unittest.TestCase):
 
     # Negative: non-string version fields are refused.
     def test_non_string_version_is_refused(self):
+        """A version value that is not a string is refused."""
         for v in (1, 1.0, None, True, ["1.0.0.0"], {"a": 1}):
             with self.subTest(v=v), self.assertRaisesRegex(
                 manifest_checks.ManifestError, "has a version without a number"
@@ -49,6 +51,7 @@ class Versions(unittest.TestCase):
 
     # Negative: a plugin without a string GUID is refused.
     def test_non_string_guid_is_refused(self):
+        """A plugin entry whose GUID is not a string is refused."""
         for guid in (123, None, ["x"]):
             with self.subTest(guid=guid), self.assertRaisesRegex(
                 manifest_checks.ManifestError, "a plugin entry has no GUID"
@@ -64,6 +67,7 @@ class History(unittest.TestCase):
 
     # Negative: a removed version and a rewritten checksum or download URL are each refused.
     def test_removed_or_rewritten_versions_are_refused(self):
+        """A published version that is removed, or rewritten in checksum or source URL, is reported."""
         rewritten = manifest("1.0.0")
         rewritten[0]["versions"][0]["checksum"] = "1" * 32
         moved = manifest("1.0.0")
@@ -76,6 +80,7 @@ class History(unittest.TestCase):
     # Boundary: an empty base publishes nothing, so any head passes; an unchanged manifest passes;
     # a duplicate version or a manifest that is no list of plugins cannot be compared.
     def test_edges(self):
+        """An added version passes, an unchanged manifest passes, and a malformed base is refused."""
         self.assertEqual(manifest_checks.history_findings([], manifest("1.0.0")), [])
         self.assertEqual(manifest_checks.history_findings(manifest("1.0.0"), copy.deepcopy(manifest("1.0.0"))), [])
         for broken in (manifest("1.0.0", "1.0.0"), {}, [{"versions": []}], [{"guid": GUID}], [{"guid": GUID, "versions": [{}]}]):
@@ -109,6 +114,7 @@ class Main(unittest.TestCase):
     """The command line against a git repository holding a published manifest."""
 
     def setUp(self):
+        """Create a temporary git repository with a committed one-version manifest."""
         self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         self.errors = self.enterContext(contextlib.redirect_stderr(io.StringIO()))
         self.write(manifest("1.0.0"))

@@ -38,6 +38,7 @@ class Pinned(unittest.TestCase):
                 python_pin.pinned(Path(directory) / ".python-version")
 
     def test_anything_but_one_full_version_is_refused(self):
+        """A pin file that does not hold exactly one full version is refused."""
         for text in ("", "3.14", "3.14.8.1", "3.14.x", "v3.14.8", "3.14.8\n3.13.1", "pypy3.11-7.3.19"):
             with self.subTest(text=text), tempfile.TemporaryDirectory() as directory:
                 with self.assertRaisesRegex(python_pin.InterpreterError, "one full version"):
@@ -49,6 +50,7 @@ class Check(unittest.TestCase):
         self.assertEqual(python_pin.check((3, 14, 8), (3, 14, 8, "final", 0)), "")
 
     def test_other_patch_level_passes_and_is_named(self):
+        """Another patch level of the pinned line passes, and the note names both versions."""
         for running in ((3, 14, 0), (3, 14, 7), (3, 14, 9)):
             with self.subTest(running=running):
                 self.assertEqual(
@@ -56,6 +58,7 @@ class Check(unittest.TestCase):
                 )
 
     def test_other_minor_or_major_line_is_refused(self):
+        """A running interpreter from another minor or major line is refused."""
         for running in ((3, 13, 8), (3, 15, 0), (2, 14, 8), (4, 14, 8)):
             with self.subTest(running=running):
                 with self.assertRaisesRegex(python_pin.InterpreterError, r"pins the 3\.14 line"):
