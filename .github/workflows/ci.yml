@@ -208,6 +208,8 @@ jobs:
           [[ "$status" -eq 1 ]]
           grep --fixed-strings --quiet 'target CLAUDE.md is out of sync with AGENTS.md' <<<"$output"
       - name: HISS audit
+        env:
+          PRAETOR_RELEASE_PR: ${{ startsWith(github.head_ref || github.ref_name, 'release-please--') }}
         run: praetorctl audit
       - name: Flavor audit
         # .workingdir/ ledgers are gitignored; the flavor audit requires them.
