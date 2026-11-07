@@ -38,7 +38,8 @@
         "github.com/cordanaLLM/praetor/**",
         "github.com/cordanaLLM/praetor/cmd/standardsctl",
         "cordanaLLM/praetor",
-        "cordanaLLM/praetor/**"
+        "cordanaLLM/praetor/**",
+        "https://github.com/cordanaLLM/praetor"
       ],
       "enabled": false
     }
