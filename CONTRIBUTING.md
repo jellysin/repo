@@ -48,15 +48,20 @@ Local manifest updates also require GitHub CLI
 for signature verification and a GITHUB_TOKEN/GH_TOKEN for
 rate-limited API reads. It downloads data but never runs code from plugin archives.
 
-The updater opens `automation/repository` as a PR, then explicitly dispatches CI.
+The updater opens `automation/repository` as a PR, then dispatches CI on that branch
+once per head commit (a workflow with a dispatched run for that commit, running or
+finished, is not dispatched again, since a second run cancels the first; a failed
+dispatch fails the updater run and the next scheduled run retries it); that
+dispatched run is an early signal only, because GitHub never counts
+`workflow_dispatch` runs toward a pull request's required checks.
 Its commit is created through the GitHub API with the repository token and is signed
 as `github-actions[bot]`, because the main ruleset requires signed commits.
-GitHub may also place the PR-triggered run behind its bot-workflow approval gate.
-A maintainer reviews and approves that run; a dispatched run alone may not clear
-the required PR check. No extra App/PAT or synthetic check is used to evade it.
-Do not write directly to main or bypass required checks. A failed update keeps
-the previous manifest intact. Resolve the release or allowlist problem and retry
-the updater; never replace an already published release asset.
+GitHub may also place the PR-triggered CI and CodeQL runs behind its bot-workflow
+approval gate. A maintainer reviews and approves those runs; a dispatched run does
+not clear the required PR checks. No extra App/PAT or synthetic check is used to
+evade it. Do not write directly to main or bypass required checks. A failed update
+keeps the previous manifest intact. Resolve the release or allowlist problem and
+retry the updater; never replace an already published release asset.
 
 Source releases must have immutable releases enabled before publication. The
 plugin repository trusts the approved release workflow, not arbitrary self-declared JSON.

@@ -33,9 +33,10 @@ server does not offer an entry. Validation of the file's form cannot show that: 
 server silently drops a version whose `targetAbi` is above its own version.
 
 The updater opens a PR using only this repository's GITHUB_TOKEN and explicitly
-dispatches CI on its branch. Required checks and normal PR review/merge behavior
-apply. Plugin source repositories have no write access here, and no release App
-or personal access token is needed.
+dispatches CI on its branch once per head commit as an early signal; the required
+checks come from the PR's own CI and CodeQL runs, which a maintainer may need to
+approve, and normal PR review/merge behavior applies. Plugin source repositories
+have no write access here, and no release App or personal access token is needed.
 
 ## Adding a plugin
 
