@@ -91,11 +91,8 @@ def workflow_contexts(workflow_text):
     return contexts
 
 
-def validate_required_checks(ruleset_text, workflows, catalog_text):
-    """Refuse if any required check lacks pull_request or catalog dispatches invalid workflows."""
-    required = required_contexts(ruleset_text)
-    if not required:
-        return True
+def contexts_per_workflow(workflows):
+    """Return the contexts each readable workflow reports, and the reason each unreadable one was set aside."""
     contexts_by_file = {}
     set_aside = {}
     for fname, text in workflows.items():
@@ -103,7 +100,11 @@ def validate_required_checks(ruleset_text, workflows, catalog_text):
             contexts_by_file[fname] = workflow_contexts(text)
         except ValueError as err:
             set_aside[fname] = str(err)
+    return contexts_by_file, set_aside
 
+
+def workflows_for_required(required, contexts_by_file, set_aside):
+    """Map each workflow reporting a required context to the first such context; refuse a context no workflow reports."""
     required_workflows = {}
     for context in required:
         matching = [fname for fname, ctxs in contexts_by_file.items() if context in ctxs]
@@ -114,16 +115,22 @@ def validate_required_checks(ruleset_text, workflows, catalog_text):
                 msg += f" (set aside: {details})"
             raise ValueError(msg)
         for fname in matching:
-            if fname not in required_workflows:
-                required_workflows[fname] = context
+            required_workflows.setdefault(fname, context)
+    return required_workflows
 
+
+def check_pull_request_triggers(required_workflows, workflows):
+    """Refuse a workflow reporting a required check whose 'on:' block has no pull_request trigger."""
     for fname in sorted(required_workflows):
-        wtext = workflows[fname]
-        context = required_workflows[fname]
-        on_match = re.search(r"^on:\s*(.*?)(?=^[a-z-]+:|\Z)", wtext, re.MULTILINE | re.DOTALL)
+        on_match = re.search(r"^on:\s*(.*?)(?=^[a-z-]+:|\Z)", workflows[fname], re.MULTILINE | re.DOTALL)
         if not on_match or not re.search(r"^\s*pull_request:", on_match.group(1), re.MULTILINE):
-            raise ValueError(f"{fname} reports required check {context!r} but does not run on pull_request")
+            raise ValueError(
+                f"{fname} reports required check {required_workflows[fname]!r} but does not run on pull_request"
+            )
 
+
+def check_catalog_dispatch(catalog_text):
+    """Refuse a catalog workflow that dispatches anything but ci.yml, or dispatches it without the head-commit run check."""
     for match in re.finditer(r"\bgh\s+workflow\s+run\s+([^\s]+)", catalog_text):
         name = match.group(1)
         if name != "ci.yml":
@@ -140,6 +147,17 @@ def validate_required_checks(ruleset_text, workflows, catalog_text):
         raise ValueError(
             "catalog workflow dispatches ci.yml without checking for a dispatched run of the head commit"
         )
+
+
+def validate_required_checks(ruleset_text, workflows, catalog_text):
+    """Refuse if any required check lacks pull_request or catalog dispatches invalid workflows."""
+    required = required_contexts(ruleset_text)
+    if not required:
+        return True
+    contexts_by_file, set_aside = contexts_per_workflow(workflows)
+    required_workflows = workflows_for_required(required, contexts_by_file, set_aside)
+    check_pull_request_triggers(required_workflows, workflows)
+    check_catalog_dispatch(catalog_text)
     return True
 
 
