@@ -48,7 +48,11 @@ Local manifest updates also require GitHub CLI
 for signature verification and a GITHUB_TOKEN/GH_TOKEN for
 rate-limited API reads. It downloads data but never runs code from plugin archives.
 
-The updater opens `automation/repository` as a PR, then explicitly dispatches CI.
+The updater opens `automation/repository` as a PR and dispatches the CI and
+CodeQL workflows that report the required checks, once per head commit (a workflow
+with a dispatched run for that commit, running or finished, is not dispatched again,
+since a second run cancels the first; a failed dispatch fails the updater run and
+the next scheduled run retries it).
 Its commit is created through the GitHub API with the repository token and is signed
 as `github-actions[bot]`, because the main ruleset requires signed commits.
 GitHub may also place the PR-triggered run behind its bot-workflow approval gate.

@@ -7,14 +7,12 @@ checklist claimed the dispatched CI run passes `make verify-all`, which ci.yml n
 """
 
 import re
-import sys
 import unittest
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "tests"))
+from test_catalog_dispatch import workflow_contexts
 
-from test_catalog_dispatch import workflow_contexts  # noqa: E402
+ROOT = Path(__file__).resolve().parent.parent
 
 WORKFLOW = ROOT / ".github" / "workflows" / "update-catalog.yml"
 TEMPLATE = ROOT / ".github" / "pull_request_template.md"
@@ -47,11 +45,30 @@ def validate_pr_body(body, template_text):
     return True
 
 
+def checklist_section(body):
+    """Return text from '## Pre-Merge Verification Checklist' to the next '## ' heading or end."""
+    lines = body.splitlines(keepends=True)
+    start = None
+    for i, line in enumerate(lines):
+        if line.startswith("## Pre-Merge Verification Checklist"):
+            start = i
+            break
+    if start is None:
+        return ""
+    end = len(lines)
+    for j in range(start + 1, len(lines)):
+        if lines[j].startswith("## "):
+            end = j
+            break
+    return "".join(lines[start:end])
+
+
 def validate_ci_claims(body, ci_text):
     """Refuse a body that omits a CI job name or claims CI runs `make verify-all`."""
+    checklist = checklist_section(body)
     for name in JOB_NAME_RE.findall(ci_text):
-        if name not in body:
-            raise ValueError(f"pull request body does not name CI job {name!r}")
+        if name not in checklist:
+            raise ValueError(f"pull request body does not name CI job {name!r} in the checklist")
     for line in body.splitlines():
         if "make verify-all" in line and "does not run `make verify-all`" not in line:
             raise ValueError("pull request body claims CI runs make verify-all")
@@ -60,9 +77,10 @@ def validate_ci_claims(body, ci_text):
 
 def validate_codeql_claims(body, codeql_text):
     """Refuse a body that omits any check context reported by CodeQL."""
+    checklist = checklist_section(body)
     for context in workflow_contexts(codeql_text):
-        if context not in body:
-            raise ValueError(f"pull request body does not name CodeQL context {context!r}")
+        if context not in checklist:
+            raise ValueError(f"pull request body does not name CodeQL context {context!r} in the checklist")
     return True
 
 
@@ -99,19 +117,51 @@ class CatalogPrBodyTests(unittest.TestCase):
     def test_refuse_missing_codeql_context(self):
         """A pull request body omitting a CodeQL matrix context is refused."""
         codeql_text = "jobs:\n  analyze:\n    strategy:\n      matrix:\n        language: [python, actions]\n"
+        body = "## Pre-Merge Verification Checklist\n\n- [ ] analyze (python) passes.\n"
         with self.assertRaisesRegex(ValueError, "'analyze \\(actions\\)'"):
-            validate_codeql_claims("- [ ] analyze (python) passes.\n", codeql_text)
+            validate_codeql_claims(body, codeql_text)
+
+    def test_refuse_codeql_context_in_description_only(self):
+        """CodeQL contexts named in Description but missing in the checklist are refused."""
+        codeql_text = "jobs:\n  analyze:\n    strategy:\n      matrix:\n        language: [python, actions]\n"
+        body = (
+            "## Description\n\nRuns analyze (python) and analyze (actions).\n\n"
+            "## Pre-Merge Verification Checklist\n\n- [ ] analyze (python) passes.\n"
+        )
+        with self.assertRaisesRegex(ValueError, "'analyze \\(actions\\)'"):
+            validate_codeql_claims(body, codeql_text)
 
     def test_refuse_ci_verify_all_claim(self):
         ci_text = "jobs:\n  checks:\n    name: CI\n"
-        body = "- [ ] CI and `make verify-all` pass in the dispatched CI run.\n"
+        body = "## Pre-Merge Verification Checklist\n\n- [ ] CI and `make verify-all` pass in the dispatched CI run.\n"
         with self.assertRaisesRegex(ValueError, "claims CI runs make verify-all"):
             validate_ci_claims(body, ci_text)
 
     def test_refuse_missing_ci_job(self):
         ci_text = "jobs:\n  checks:\n    name: CI\n  scan:\n    name: scanners\n"
+        body = "## Pre-Merge Verification Checklist\n\n- [ ] CI passes.\n"
         with self.assertRaisesRegex(ValueError, "'scanners'"):
-            validate_ci_claims("- [ ] CI passes.\n", ci_text)
+            validate_ci_claims(body, ci_text)
+
+    def test_refuse_ci_job_in_description_only(self):
+        """CI jobs named in Description but missing in the checklist are refused."""
+        ci_text = "jobs:\n  checks:\n    name: CI\n  scan:\n    name: scanners\n"
+        body = (
+            "## Description\n\nRuns CI and scanners.\n\n"
+            "## Pre-Merge Verification Checklist\n\n- [ ] CI passes.\n"
+        )
+        with self.assertRaisesRegex(ValueError, "'scanners'"):
+            validate_ci_claims(body, ci_text)
+
+    def test_boundary_later_heading_ends_checklist(self):
+        """A heading after the checklist ends the section; names under later headings are refused."""
+        ci_text = "jobs:\n  checks:\n    name: CI\n  scan:\n    name: scanners\n"
+        body = (
+            "## Pre-Merge Verification Checklist\n\n- [ ] CI passes.\n\n"
+            "## Later\n\n- [ ] scanners passes.\n"
+        )
+        with self.assertRaisesRegex(ValueError, "'scanners'"):
+            validate_ci_claims(body, ci_text)
 
     def test_boundary_ci_without_jobs(self):
         self.assertTrue(validate_ci_claims("Nothing to name.\n", "on: push\n"))
