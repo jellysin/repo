@@ -1,10 +1,8 @@
-"""The catalog bot pull request dispatches workflows providing every required status check.
+"""Workflows reporting required status checks run on pull_request.
 
-Catalog bot PR 67 never received required CodeQL checks because codeql.yml lacked
-workflow_dispatch and update-catalog.yml only dispatched ci.yml, leaving the pull request
-blocked from 2026-10-19 until approved by hand on 2026-11-10.
-Re-dispatching a running check cancels it under cancel-in-progress concurrency, so each
-workflow is dispatched only once per head commit unless cancelled.
+Catalog bot PR 67 waited for approval of its held pull_request runs; dispatched
+runs never count toward required checks. The ci.yml dispatch stays an early
+signal, once per head commit because a second run cancels the first.
 """
 
 import json
@@ -93,9 +91,11 @@ def workflow_contexts(workflow_text):
     return contexts
 
 
-def validate_dispatch(ruleset_text, workflows, catalog_text):
-    """Refuse if any required check is unreported or its workflow lacks dispatch in catalog_text."""
+def validate_required_checks(ruleset_text, workflows, catalog_text):
+    """Refuse if any required check lacks pull_request or catalog dispatches invalid workflows."""
     required = required_contexts(ruleset_text)
+    if not required:
+        return True
     contexts_by_file = {}
     set_aside = {}
     for fname, text in workflows.items():
@@ -104,7 +104,7 @@ def validate_dispatch(ruleset_text, workflows, catalog_text):
         except ValueError as err:
             set_aside[fname] = str(err)
 
-    dispatched_workflows = set()
+    required_workflows = {}
     for context in required:
         matching = [fname for fname, ctxs in contexts_by_file.items() if context in ctxs]
         if not matching:
@@ -113,21 +113,33 @@ def validate_dispatch(ruleset_text, workflows, catalog_text):
                 details = "; ".join(f"{fname}: {reason}" for fname, reason in sorted(set_aside.items()))
                 msg += f" (set aside: {details})"
             raise ValueError(msg)
-        dispatched_workflows.update(matching)
+        for fname in matching:
+            if fname not in required_workflows:
+                required_workflows[fname] = context
 
-    for fname in sorted(dispatched_workflows):
+    for fname in sorted(required_workflows):
         wtext = workflows[fname]
+        context = required_workflows[fname]
         on_match = re.search(r"^on:\s*(.*?)(?=^[a-z-]+:|\Z)", wtext, re.MULTILINE | re.DOTALL)
-        if not on_match or not re.search(r"^\s*workflow_dispatch:", on_match.group(1), re.MULTILINE):
-            raise ValueError(f"{fname} lacks workflow_dispatch in on: block")
-        pattern = rf"\bgh\s+workflow\s+run\s+{re.escape(fname)}\b.*--ref\s+automation/repository"
-        if not re.search(pattern, catalog_text, re.MULTILINE):
-            raise ValueError(f"catalog workflow does not dispatch {fname}")
-        runs_pattern = rf"actions/workflows/{re.escape(fname)}/runs\?event=workflow_dispatch&head_sha="
-        if not re.search(runs_pattern, catalog_text):
+        if not on_match or not re.search(r"^\s*pull_request:", on_match.group(1), re.MULTILINE):
+            raise ValueError(f"{fname} reports required check {context!r} but does not run on pull_request")
+
+    for match in re.finditer(r"\bgh\s+workflow\s+run\s+([^\s]+)", catalog_text):
+        name = match.group(1)
+        if name != "ci.yml":
             raise ValueError(
-                f"catalog workflow dispatches {fname} without checking for a dispatched run of the head commit"
+                f"catalog workflow dispatches {name}; only ci.yml is dispatched, and dispatched runs never count toward required checks"
             )
+
+    pattern = rf"\bgh\s+workflow\s+run\s+{re.escape('ci.yml')}\b.*--ref\s+automation/repository"
+    if not re.search(pattern, catalog_text, re.MULTILINE):
+        raise ValueError("catalog workflow does not dispatch ci.yml")
+
+    runs_pattern = rf"actions/workflows/{re.escape('ci.yml')}/runs\?event=workflow_dispatch&head_sha="
+    if not re.search(runs_pattern, catalog_text):
+        raise ValueError(
+            "catalog workflow dispatches ci.yml without checking for a dispatched run of the head commit"
+        )
     return True
 
 
@@ -142,36 +154,67 @@ class CatalogDispatchTests(unittest.TestCase):
 
     def test_repository_files_pass(self):
         """Repository ruleset, workflows, and catalog dispatch pass validation."""
-        self.assertTrue(validate_dispatch(self.ruleset, self.workflows, self.catalog_text))
+        self.assertTrue(validate_required_checks(self.ruleset, self.workflows, self.catalog_text))
 
-    def test_refuse_catalog_without_codeql_dispatch(self):
-        """A catalog workflow missing the codeql.yml dispatch line is refused naming codeql.yml."""
-        planted = "\n".join(
-            line for line in self.catalog_text.splitlines() if "codeql.yml" not in line
+    def test_refuse_catalog_with_codeql_dispatch(self):
+        """A catalog workflow dispatching codeql.yml is refused naming codeql.yml."""
+        planted = (
+            self.catalog_text
+            + '\n          gh workflow run codeql.yml --repo "$GITHUB_REPOSITORY" --ref automation/repository\n'
         )
-        with self.assertRaisesRegex(ValueError, "does not dispatch codeql\\.yml"):
-            validate_dispatch(self.ruleset, self.workflows, planted)
+        with self.assertRaisesRegex(ValueError, r"^catalog workflow dispatches codeql\.yml; only ci\.yml is dispatched"):
+            validate_required_checks(self.ruleset, self.workflows, planted)
 
-    def test_refuse_codeql_without_workflow_dispatch(self):
-        """A workflow providing required checks that lacks workflow_dispatch is refused."""
+    def test_refuse_codeql_without_pull_request(self):
+        """A workflow reporting required checks that lacks pull_request is refused."""
         planted_codeql = "\n".join(
-            line for line in self.codeql_text.splitlines() if "workflow_dispatch" not in line
+            line for line in self.codeql_text.splitlines() if "pull_request:" not in line
         )
         workflows = dict(self.workflows, **{"codeql.yml": planted_codeql})
-        with self.assertRaisesRegex(ValueError, "codeql\\.yml lacks workflow_dispatch"):
-            validate_dispatch(self.ruleset, workflows, self.catalog_text)
+        with self.assertRaisesRegex(
+            ValueError, r"codeql\.yml reports required check.*does not run on pull_request"
+        ):
+            validate_required_checks(self.ruleset, workflows, self.catalog_text)
+
+    def test_refuse_codeql_with_pull_request_target(self):
+        """A workflow using pull_request_target instead of pull_request is refused."""
+        planted_codeql = self.codeql_text.replace("pull_request:", "pull_request_target:")
+        workflows = dict(self.workflows, **{"codeql.yml": planted_codeql})
+        with self.assertRaisesRegex(
+            ValueError, r"codeql\.yml reports required check.*does not run on pull_request"
+        ):
+            validate_required_checks(self.ruleset, workflows, self.catalog_text)
+
+    def test_refuse_catalog_without_ci_dispatch(self):
+        """A catalog workflow missing the ci.yml dispatch line is refused naming ci.yml."""
+        planted = "\n".join(
+            line for line in self.catalog_text.splitlines() if "gh workflow run ci.yml" not in line
+        )
+        with self.assertRaisesRegex(ValueError, "does not dispatch ci\\.yml"):
+            validate_required_checks(self.ruleset, self.workflows, planted)
+
+    def test_refuse_catalog_without_ci_run_check(self):
+        """A catalog workflow dispatching ci.yml without checking its head commit runs is refused."""
+        planted = "\n".join(
+            line for line in self.catalog_text.splitlines() if "ci.yml/runs" not in line
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            r"dispatches ci\.yml without checking for a dispatched run of the head commit",
+        ):
+            validate_required_checks(self.ruleset, self.workflows, planted)
 
     def test_refuse_unreported_required_context(self):
         """A required status check context not provided by any workflow is refused naming it."""
         planted_ci = self.ci_text.replace("name: server-check", "name: unrequired-check")
         workflows = dict(self.workflows, **{"ci.yml": planted_ci})
         with self.assertRaisesRegex(ValueError, "server-check"):
-            validate_dispatch(self.ruleset, workflows, self.catalog_text)
+            validate_required_checks(self.ruleset, workflows, self.catalog_text)
 
     def test_boundary_empty_ruleset_passes(self):
         """A ruleset with no required_status_checks rule passes with arbitrary workflows."""
         empty_ruleset = json.dumps({"rules": [{"type": "deletion"}]})
-        self.assertTrue(validate_dispatch(empty_ruleset, {}, "no-op"))
+        self.assertTrue(validate_required_checks(empty_ruleset, {}, "no-op"))
 
     def test_matrix_expansion_for_codeql(self):
         """Matrix expansion for codeql.yml yields exactly analyze (python) and analyze (actions)."""
@@ -215,7 +258,7 @@ class CatalogDispatchTests(unittest.TestCase):
         block_list_codeql = (
             "name: CodeQL\n"
             "on:\n"
-            "  workflow_dispatch:\n"
+            "  pull_request:\n"
             "jobs:\n"
             "  analyze:\n"
             "    strategy:\n"
@@ -228,24 +271,13 @@ class CatalogDispatchTests(unittest.TestCase):
         with self.assertRaisesRegex(
             ValueError, r"no workflow reports required status check context 'analyze \(python\)'.*codeql\.yml"
         ):
-            validate_dispatch(self.ruleset, workflows, self.catalog_text)
+            validate_required_checks(self.ruleset, workflows, self.catalog_text)
 
     def test_platforms_workflow_matrix_raises(self):
         """The platforms.yml workflow has an include matrix, so workflow_contexts raises."""
         platforms_text = self.workflows["platforms.yml"]
         with self.assertRaisesRegex(ValueError, r"\bverify-all\b"):
             workflow_contexts(platforms_text)
-
-    def test_refuse_catalog_without_codeql_run_check(self):
-        """A catalog workflow dispatching codeql.yml without checking its head commit runs is refused."""
-        planted = "\n".join(
-            line for line in self.catalog_text.splitlines() if "codeql.yml/runs" not in line
-        )
-        with self.assertRaisesRegex(
-            ValueError,
-            r"catalog workflow dispatches codeql\.yml without checking for a dispatched run of the head commit",
-        ):
-            validate_dispatch(self.ruleset, self.workflows, planted)
 
 
 if __name__ == "__main__":

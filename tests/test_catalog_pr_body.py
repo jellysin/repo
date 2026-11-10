@@ -84,20 +84,37 @@ def validate_codeql_claims(body, codeql_text):
     return True
 
 
+def validate_gate_claims(body):
+    """Refuse a body that describes dispatched runs as gates or omits pull request gate claims."""
+    checklist = checklist_section(body)
+    if not checklist:
+        raise ValueError("pull request body has no Pre-Merge Verification Checklist")
+    for line in checklist.splitlines():
+        if "dispatch" in line and "does not count toward the required checks" not in line:
+            raise ValueError(f"checklist line describes a dispatched run as a required check: {line}")
+    if "runs of this pull request pass" not in checklist:
+        raise ValueError("checklist does not name the pull request runs as the gate")
+    return True
+
+
 class CatalogPrBodyTests(unittest.TestCase):
     def setUp(self):
+        """Load the pull request template."""
         self.template = TEMPLATE.read_text(encoding="utf-8")
 
     def test_workflow_body_follows_template(self):
+        """The workflow body follows all template headings and paragraph formatting."""
         body = extract_body(WORKFLOW.read_text(encoding="utf-8"))
         self.assertTrue(validate_pr_body(body, self.template))
 
     def test_refuse_missing_heading(self):
+        """A pull request body missing a required heading is refused."""
         body = "## Description\n\nAdds versions.\n"
         with self.assertRaisesRegex(ValueError, "Pre-Merge Verification Checklist"):
             validate_pr_body(body, self.template)
 
     def test_refuse_hard_wrapped_paragraph(self):
+        """A pull request body that hard-wraps a prose paragraph is refused."""
         body = (
             "## Description\n\nAdds published plugin versions after checking,\nsigned provenance.\n\n"
             "## Pre-Merge Verification Checklist\n\n- [ ] item\n"
@@ -106,6 +123,7 @@ class CatalogPrBodyTests(unittest.TestCase):
             validate_pr_body(body, self.template)
 
     def test_workflow_body_names_ci_jobs(self):
+        """The workflow body names every CI job in the checklist."""
         body = extract_body(WORKFLOW.read_text(encoding="utf-8"))
         self.assertTrue(validate_ci_claims(body, CI.read_text(encoding="utf-8")))
 
@@ -113,6 +131,52 @@ class CatalogPrBodyTests(unittest.TestCase):
         """The workflow body names every CodeQL check context."""
         body = extract_body(WORKFLOW.read_text(encoding="utf-8"))
         self.assertTrue(validate_codeql_claims(body, CODEQL.read_text(encoding="utf-8")))
+
+    def test_workflow_body_gate_claims(self):
+        """The workflow PR body passes gate claims validation."""
+        body = extract_body(WORKFLOW.read_text(encoding="utf-8"))
+        self.assertTrue(validate_gate_claims(body))
+
+    def test_refuse_previous_checklist_line(self):
+        """The previous checklist line describing dispatched runs as gates is refused."""
+        previous = (
+            "- [ ] The CI and CodeQL runs this workflow dispatches on this branch pass: "
+            "the CI job (workflow lint, interpreter pin, repository tests, manifest and "
+            "allowlist checks), server-check, scanners, governance (praetor), and the CodeQL "
+            "jobs analyze (python) and analyze (actions); the required checks block the "
+            "merge until they do. It does not run `make verify-all`, which stays a local check."
+        )
+        body = f"## Pre-Merge Verification Checklist\n\n{previous}\n"
+        with self.assertRaisesRegex(
+            ValueError, r"checklist line describes a dispatched run as a required check"
+        ):
+            validate_gate_claims(body)
+
+    def test_refuse_checklist_without_pull_request_runs(self):
+        """A checklist without the pull request runs phrase is refused."""
+        body = "## Pre-Merge Verification Checklist\n\n- [ ] Other checks pass.\n"
+        with self.assertRaisesRegex(
+            ValueError, "checklist does not name the pull request runs as the gate"
+        ):
+            validate_gate_claims(body)
+
+    def test_refuse_body_without_checklist_heading(self):
+        """A body with no checklist heading is refused."""
+        body = "## Description\n\nRuns tests.\n"
+        with self.assertRaisesRegex(
+            ValueError, "pull request body has no Pre-Merge Verification Checklist"
+        ):
+            validate_gate_claims(body)
+
+    def test_boundary_dispatch_in_description_only_passes(self):
+        """Dispatch named in Description only plus a valid checklist passes."""
+        body = (
+            "## Description\n\n"
+            "This workflow explicitly dispatches CI on the branch.\n\n"
+            "## Pre-Merge Verification Checklist\n\n"
+            "- [ ] The CI and CodeQL runs of this pull request pass.\n"
+        )
+        self.assertTrue(validate_gate_claims(body))
 
     def test_refuse_missing_codeql_context(self):
         """A pull request body omitting a CodeQL matrix context is refused."""
@@ -132,12 +196,14 @@ class CatalogPrBodyTests(unittest.TestCase):
             validate_codeql_claims(body, codeql_text)
 
     def test_refuse_ci_verify_all_claim(self):
+        """A pull request body claiming CI runs make verify-all is refused."""
         ci_text = "jobs:\n  checks:\n    name: CI\n"
         body = "## Pre-Merge Verification Checklist\n\n- [ ] CI and `make verify-all` pass in the dispatched CI run.\n"
         with self.assertRaisesRegex(ValueError, "claims CI runs make verify-all"):
             validate_ci_claims(body, ci_text)
 
     def test_refuse_missing_ci_job(self):
+        """A pull request body omitting a CI job name is refused."""
         ci_text = "jobs:\n  checks:\n    name: CI\n  scan:\n    name: scanners\n"
         body = "## Pre-Merge Verification Checklist\n\n- [ ] CI passes.\n"
         with self.assertRaisesRegex(ValueError, "'scanners'"):
@@ -164,12 +230,15 @@ class CatalogPrBodyTests(unittest.TestCase):
             validate_ci_claims(body, ci_text)
 
     def test_boundary_ci_without_jobs(self):
+        """A CI workflow without jobs passes job validation."""
         self.assertTrue(validate_ci_claims("Nothing to name.\n", "on: push\n"))
 
     def test_boundary_template_without_headings(self):
+        """A template without headings passes body validation."""
         self.assertTrue(validate_pr_body("One line.\n", "no headings here\n"))
 
     def test_refuse_workflow_without_body(self):
+        """A workflow text without a body block raises ValueError."""
         with self.assertRaisesRegex(ValueError, "no 'body"):
             extract_body("steps:\n  - run: true\n")
 

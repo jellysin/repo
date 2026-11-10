@@ -44,11 +44,11 @@ jobs:
 
             ## Pre-Merge Verification Checklist
 
-            - [ ] The CI and CodeQL runs this workflow dispatches on this branch pass: the CI job (workflow lint, interpreter pin, repository tests, manifest and allowlist checks), server-check, scanners, governance (praetor), and the CodeQL jobs analyze (python) and analyze (actions); the required checks block the merge until they do. It does not run `make verify-all`, which stays a local check.
+            - [ ] The CI and CodeQL runs of this pull request pass: the CI job (workflow lint, interpreter pin, repository tests, manifest and allowlist checks), server-check, scanners, governance (praetor), and the CodeQL jobs analyze (python) and analyze (actions). GitHub may hold these runs until a maintainer approves them. The CI run this workflow dispatches on the branch is an early signal and does not count toward the required checks. It does not run `make verify-all`, which stays a local check.
             - [x] Only `manifest.json` changes; no function, public interface or agent context changes, so the HISS, 3D test and context items do not apply.
             - [x] The commit message follows Conventional Commits.
-      # Re-dispatch cancels running checks; dispatch once per head commit. A cancelled run is dispatched again.
-      - name: Explicitly dispatch the required checks for the bot pull request
+      # Dispatched CI is an early signal only and never counts toward the required checks; dispatch once per head commit because a second run cancels the first; a cancelled run is dispatched again.
+      - name: Explicitly dispatch CI for the bot pull request
         if: steps.repository-pr.outputs.pull-request-number != ''
         env:
           GH_TOKEN: ${{ github.token }}
@@ -57,8 +57,6 @@ jobs:
           head=$(gh pr view "$PULL_REQUEST" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)
           test -n "$head"
           ci_runs=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?event=workflow_dispatch&head_sha=$head&per_page=100" --jq '[.workflow_runs[] | select(.conclusion != "cancelled")] | length')
-          codeql_runs=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/codeql.yml/runs?event=workflow_dispatch&head_sha=$head&per_page=100" --jq '[.workflow_runs[] | select(.conclusion != "cancelled")] | length')
           failed=0
           if [ "$ci_runs" = 0 ]; then gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref automation/repository || failed=1; fi
-          if [ "$codeql_runs" = 0 ]; then gh workflow run codeql.yml --repo "$GITHUB_REPOSITORY" --ref automation/repository || failed=1; fi
           exit "$failed"
